@@ -72,24 +72,33 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Management</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./adminStyle.css">
 </head>
 <body>
-<header class="header">Header</header>
+<header class="header">
+        <p class="header-p">IBT TICKETING SYSTEM</p>
+        <div class="admin-img"></div>
+    </header>
     <section class="sidebar">
+    <div class="IBT-admin">Admin</div>
         <ul>
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
-            <li><a href="bus.php" class="menu-item">Bus</a></li>
-            <li><a href="route.php" class="menu-item" data-page="route">Route</a></li>
-            <li><a href="customer.php" class="menu-item" data-page="customer">Customer</a></li>
-            <li><a href="booking.php" class="menu-item" data-page="bookings">Bookings</a></li>
+            <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>
+            <li><a href="route.php" class="menu-item">Route</a></li>
+            <li><a href="customer.php" class="menu-item">Customer</a></li>
+            <li><a href="booking.php" class="menu-item">Bookings</a></li>
+            <hr class="menu-itemHR">
+            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">
         <div id="main-content">
+           
             <h1>Bus Management</h1>
-            <h2>Add Bus</h2>
+            <div class="AddEditBus"> 
+
             <form method="POST" action="">
+            <h2>Add Bus</h2>
                 <input type="hidden" name="action" value="add">
                 <label for="bus_no">Bus No:</label>
                 <input type="text" name="bus_no" required><br>
@@ -107,29 +116,6 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <input type="submit" value="Add Bus">
             </form>
 
-            <h2>View Buses</h2>
-            <table border="1">
-                <tr>
-                    <th>ID</th>
-                    <th>Bus No</th>
-                    <th>Bus Type</th>
-                    <th>Number of Seats</th>
-                    <th>Actions</th>
-                </tr>
-                <?php foreach ($buses as $row): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['bus_id']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_no']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_type']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_seat']); ?></td>
-                    <td>
-                        <a href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>">Edit</a>
-                        <a href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </table>
-
             <?php if (isset($_GET['edit'])): 
                 $id = clean_input($_GET['edit']);
                 $sql = "SELECT * FROM bus WHERE bus_id=?";
@@ -140,8 +126,9 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 // Reset error message for edit
                 $errorBusNo = "";
             ?>
-            <h2>Edit Bus</h2>
+            
             <form method="POST" action="">
+            <h2>Edit Bus</h2>
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="bus_id" value="<?php echo htmlspecialchars($bus['bus_id']); ?>">
                 <label for="bus_no">Bus No:</label>
@@ -160,6 +147,32 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <input type="submit" value="Update Bus">
             </form>
             <?php endif; ?>
+            </div> 
+
+            <h2>View Buses</h2>
+            <table border="1">
+                <tr>
+                    <th>ID</th>
+                    <th>Bus No</th>
+                    <th>Bus Type</th>
+                    <th>Number of Seats</th>
+                    <th>Actions</th>
+                </tr>
+                <?php foreach ($buses as $row): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['bus_id']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bus_no']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bus_type']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bus_seat']); ?></td>
+                    <td>
+                        <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>">Edit</a>
+                        <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+
+           
                 </div>
             </main>
     

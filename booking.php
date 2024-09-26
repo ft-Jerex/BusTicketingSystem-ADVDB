@@ -119,23 +119,30 @@ $existingBookings = $bookingSystem->getExistingBookings();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Management System</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Booking Management</title>
+    <link rel="stylesheet" href="./adminStyle.css">
 </head>
 <body>
-<header class="header">Header</header>
+<header class="header">
+        <p class="header-p">IBT TICKETING SYSTEM</p>
+        <div class="admin-img"></div>
+    </header>
     <section class="sidebar">
+    <div class="IBT-admin">Admin</div>
         <ul>
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
             <li><a href="bus.php" class="menu-item">Bus</a></li>
-            <li><a href="route.php" class="menu-item" data-page="route">Route</a></li>
-            <li><a href="customer.php" class="menu-item" data-page="customer">Customer</a></li>
-            <li><a href="booking.php" class="menu-item" data-page="bookings">Bookings</a></li>
+            <li><a href="route.php" class="menu-item">Route</a></li>
+            <li><a href="customer.php" class="menu-item">Customer</a></li>
+            <li><a class="active_link" href="booking.php" class="menu-item">Bookings</a></li>
+            <hr class="menu-itemHR">
+            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">
         <div id="main-content">
-        <h1>Booking Management System</h1>
+        <h1>Booking Management</h1>
+        <div class="AddEdit">
 
 <form method="post" action="">
     <input type="hidden" name="action" id="action" value="add">
@@ -177,11 +184,14 @@ $existingBookings = $bookingSystem->getExistingBookings();
     <label for="date_book">Booking Date:</label>
     <input type="date" name="date_book" id="date_book" required><br>
 
-    <label>Select Seat:</label>
-    <div id="seat_grid"></div>
-
     <input type="submit" value="Submit">
 </form>
+
+<section class="seat">
+    <label>Select Seat:</label>
+    <div id="seat_grid"></div>
+</section>
+    </div>
 
 <h2>Existing Bookings</h2>
 <table border="1">
@@ -205,8 +215,8 @@ $existingBookings = $bookingSystem->getExistingBookings();
             <td><?= $booking['seat_taken'] ?></td>
             <td><?= $booking['date_book'] ?></td>
             <td>
-                <button onclick='editBooking(<?= json_encode($booking) ?>)'>Edit</button>
-                <button onclick='deleteBooking(<?= $booking['booking_id'] ?>)'>Delete</button>
+                <button class="editBtn" onclick='editBooking(<?= json_encode($booking) ?>)'>Edit</button>
+                <button class="deleteBtn" onclick='deleteBooking(<?= $booking['booking_id'] ?>)'>Delete</button>
             </td>
         </tr>
     <?php endforeach; ?>

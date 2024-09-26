@@ -10,8 +10,8 @@ $conn = $db->connect();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link rel="stylesheet" href="./style1.css">
-</head>
+    <link rel="stylesheet" href="./adminStyle.css">
+</head>  
 <body>
     <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
@@ -25,6 +25,8 @@ $conn = $db->connect();
             <li><a href="route.php" class="menu-item">Route</a></li>
             <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
+            <hr class="menu-itemHR">
+            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">

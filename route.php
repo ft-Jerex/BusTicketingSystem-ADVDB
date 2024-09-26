@@ -83,25 +83,31 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Route Management</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./adminStyle.css">
 </head>
 <body>
-<header class="header">Header</header>
+<header class="header">
+        <p class="header-p">IBT TICKETING SYSTEM</p>
+        <div class="admin-img"></div>
+    </header>
     <section class="sidebar">
+    <div class="IBT-admin">Admin</div>
         <ul>
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
             <li><a href="bus.php" class="menu-item">Bus</a></li>
-            <li><a href="route.php" class="menu-item" data-page="route">Route</a></li>
-            <li><a href="customer.php" class="menu-item" data-page="customer">Customer</a></li>
-            <li><a href="booking.php" class="menu-item" data-page="bookings">Bookings</a></li>
+            <li><a class="active_link" href="route.php" class="menu-item">Route</a></li>
+            <li><a href="customer.php" class="menu-item">Customer</a></li>
+            <li><a href="booking.php" class="menu-item">Bookings</a></li>
+            <hr class="menu-itemHR">
+            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">
         <div id="main-content">
         <h1>Route Management</h1>
-    
-    <h2>Add Route</h2>
+    <div class="AddEdit">
     <form method="POST" action="">
+    <h2>Add Route</h2>
         <input type="hidden" name="action" value="add">
         <label for="route_name">Route Name:</label>
         <input type="text" name="route_name" required><br>
@@ -117,6 +123,35 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         <input type="submit" value="Add Route">
     </form>
+
+    <?php if (isset($_GET['edit'])): 
+        $id = filter_var($_GET['edit'], FILTER_SANITIZE_NUMBER_INT);
+        $sql = "SELECT r.*, b.bus_no FROM route r JOIN bus b ON r.fk_bus_id = b.bus_id WHERE route_id=?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$id]);
+        $route = $stmt->fetch(PDO::FETCH_ASSOC);
+    ?>
+    
+    <form method="POST" action="">
+    <h2>Edit Route</h2>
+        <input type="hidden" name="action" value="update">
+        <input type="hidden" name="route_id" value="<?php echo htmlspecialchars($route['route_id'], ENT_QUOTES, 'UTF-8'); ?>">
+        <label for="route_name">Route Name:</label>
+        <input type="text" name="route_name" value="<?php echo htmlspecialchars($route['route_name'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
+        
+        <label for="bus_no">Bus No:</label>
+        <input type="text" name="bus_no" value="<?php echo htmlspecialchars($route['bus_no'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
+        
+        <label for="departure_time">Departure Time:</label>
+        <input type="time" name="departure_time" value="<?php echo htmlspecialchars($route['departure_time'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
+        
+        <label for="cost">Cost:</label>
+        <input type="number" step="0.01" name="cost" value="<?php echo htmlspecialchars($route['cost'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
+        
+        <input type="submit" value="Update Route">
+    </form>
+    <?php endif; ?>
+    </div>
 
     <h2>View Routes</h2>
     <table border="1">
@@ -136,39 +171,14 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <td><?php echo htmlspecialchars($row['departure_time'], ENT_QUOTES, 'UTF-8'); ?></td>
             <td><?php echo htmlspecialchars($row['cost'], ENT_QUOTES, 'UTF-8'); ?></td>
             <td>
-                <a href="?edit=<?php echo urlencode($row['route_id']); ?>">Edit</a>
-                <a href="?delete=<?php echo urlencode($row['route_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                <a class="editBtn" href="?edit=<?php echo urlencode($row['route_id']); ?>">Edit</a>
+                <a class="deleteBtn" href="?delete=<?php echo urlencode($row['route_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
             </td>
         </tr>
         <?php endforeach; ?>
     </table>
 
-    <?php if (isset($_GET['edit'])): 
-        $id = filter_var($_GET['edit'], FILTER_SANITIZE_NUMBER_INT);
-        $sql = "SELECT r.*, b.bus_no FROM route r JOIN bus b ON r.fk_bus_id = b.bus_id WHERE route_id=?";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([$id]);
-        $route = $stmt->fetch(PDO::FETCH_ASSOC);
-    ?>
-    <h2>Edit Route</h2>
-    <form method="POST" action="">
-        <input type="hidden" name="action" value="update">
-        <input type="hidden" name="route_id" value="<?php echo htmlspecialchars($route['route_id'], ENT_QUOTES, 'UTF-8'); ?>">
-        <label for="route_name">Route Name:</label>
-        <input type="text" name="route_name" value="<?php echo htmlspecialchars($route['route_name'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
-        
-        <label for="bus_no">Bus No:</label>
-        <input type="text" name="bus_no" value="<?php echo htmlspecialchars($route['bus_no'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
-        
-        <label for="departure_time">Departure Time:</label>
-        <input type="time" name="departure_time" value="<?php echo htmlspecialchars($route['departure_time'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
-        
-        <label for="cost">Cost:</label>
-        <input type="number" step="0.01" name="cost" value="<?php echo htmlspecialchars($route['cost'], ENT_QUOTES, 'UTF-8'); ?>" required><br>
-        
-        <input type="submit" value="Update Route">
-    </form>
-    <?php endif; ?>
+
         </div>
     </main>
 
