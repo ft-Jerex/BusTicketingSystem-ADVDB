@@ -2,6 +2,14 @@
 require_once 'Database.php';
 $db = new Database();
 $conn = $db->connect();
+
+session_start();
+
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+    header('Location: login.php');
+    exit();
+}
+
 ?>
 
 <!DOCTYPE html>

@@ -3,6 +3,12 @@ require_once 'database.php'; // Import the Database class
 $db = new Database();
 $conn = $db->connect(); // Establish the database connection using the Database class
 
+session_start();
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 if (!$conn) {
     die("Database connection failed.");
 }

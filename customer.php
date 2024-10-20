@@ -3,6 +3,12 @@ require_once 'database.php';
 $db = new Database();
 $conn = $db->connect();
 
+session_start();
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+    header('Location: login.php');
+    exit();
+}
+
 // Function to sanitize input
 function sanitize($data) {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');

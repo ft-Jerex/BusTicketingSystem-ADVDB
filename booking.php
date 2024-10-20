@@ -1,6 +1,12 @@
 <?php
 require_once 'database.php';
 
+session_start();
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+    header('Location: login.php');
+    exit();
+}
+
 class BookingSystem extends Database
 {
     private $db;

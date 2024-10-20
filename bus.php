@@ -2,6 +2,12 @@
 require_once 'database.php';
 require 'sanitize.php'; // Include the sanitize.php file
 
+session_start();
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
 $db = new Database();
 $conn = $db->connect();
 
