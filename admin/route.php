@@ -1,5 +1,5 @@
 <?php
-require_once 'database.php'; // Import the Database class
+require_once '../database.php'; // Import the Database class
 $db = new Database();
 $conn = $db->connect(); // Establish the database connection using the Database class
 
@@ -113,7 +113,7 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
             <hr class="menu-itemHR">
-            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
+            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">

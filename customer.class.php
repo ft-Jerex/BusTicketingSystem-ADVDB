@@ -12,6 +12,9 @@ class Customer {
     public $role = '';
     public $isAdmin = false;
     public $isCustomer = true;
+    public $isStaff = false;
+
+    
 
     protected $db;
 
@@ -23,6 +26,8 @@ class Customer {
         $this->role = 'customer'; // Set role for customer
         $this->isAdmin = false; // Ensure isAdmin is false for customers
         $this->isCustomer = true; // Ensure isCustomer is true for customers
+        $this->isStaff = false; // Ensure isCustomer is true for customers
+
 
         return $this->insertUser();
     }
@@ -31,12 +36,24 @@ class Customer {
         $this->role = 'admin'; // Set role for admin
         $this->isAdmin = true; // Set isAdmin to true
         $this->isCustomer = false; // Set isCustomer to false
+        $this->isStaff = false; // Ensure isCustomer is true for customers
+
+
+        return $this->insertUser();
+    }
+
+    function addStaff() {
+        $this->role = 'staff'; // Set role for admin
+        $this->isAdmin = false; // Set isAdmin to true
+        $this->isCustomer = false; // Set isCustomer to false
+        $this->isStaff = true; // Ensure isCustomer is true for customers
+
 
         return $this->insertUser();
     }
 
     private function insertUser() {
-        $sql = "INSERT INTO customer (first_name, last_name, contact_no, email, password, role, isAdmin, isCustomer) VALUES (:first_name, :last_name, :contact_no, :email, :password, :role, :isAdmin, :isCustomer);";
+        $sql = "INSERT INTO customer (first_name, last_name, contact_no, email, password, role, isAdmin, isCustomer, isStaff) VALUES (:first_name, :last_name, :contact_no, :email, :password, :role, :isAdmin, :isCustomer, :isStaff);";
         $query = $this->db->connect()->prepare($sql);
 
         $query->bindParam(':first_name', $this->first_name);
@@ -48,6 +65,8 @@ class Customer {
         $query->bindParam(':role', $this->role);
         $query->bindParam(':isAdmin', $this->isAdmin);
         $query->bindParam(':isCustomer', $this->isCustomer);
+        $query->bindParam(':isStaff', $this->isStaff);
+
 
         return $query->execute();
     }

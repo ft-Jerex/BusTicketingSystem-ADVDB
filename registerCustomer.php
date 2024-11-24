@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
-    $is_admin = isset($_POST['is_admin']) ? true : false;
+    $is_admin = isset($_POST['isAdmin']) ? true : false;
 
     if (empty($first_name) || empty($last_name) || empty($contact_no) || empty($email) || empty($password) || empty($confirm_password)) {
         $message = "All fields are required.";
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $customer->password = $password;
 
         if ($is_admin) {
-            $result = $customer->addAdmin();
+            $result = $customer->addStaff();
         } else {
             $result = $customer->addCustomer();
         }

@@ -1,5 +1,5 @@
 <?php
-require_once 'database.php';
+require_once '../database.php';
 
 session_start();
 if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
@@ -151,7 +151,7 @@ $existingBookings = $bookingSystem->getExistingBookings();
             <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a class="active_link" href="booking.php" class="menu-item">Bookings</a></li>
             <hr class="menu-itemHR">
-            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
+            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">

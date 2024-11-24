@@ -16,24 +16,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($customerObj->login($email, $password)) {
         $data = $customerObj->fetch($email);
         
-        // Set the session variable for customer ID
-        $_SESSION['customer_id'] = $data['customer_id']; // Assuming 'customer_id' exists in the fetched data
+        $_SESSION['customer_id'] = $data['customer_id'];
         $_SESSION['customer'] = $data;
 
-        // Redirect based on admin status
-        if ($_SESSION['customer']['isAdmin']) {
-            header('Location: dashboard.php');
+        // Convert string values from database to boolean
+        $_SESSION['customer']['isAdmin'] = (bool)$data['isAdmin'];
+        $_SESSION['customer']['isStaff'] = (bool)$data['isStaff'];
+        
+        // Debug line - remove in production
+        var_dump($_SESSION['customer']);
+
+        // Check both isAdmin and isStaff flags
+        if ($_SESSION['customer']['isAdmin'] == true || $_SESSION['customer']['isStaff'] == true) {
+            header('Location: admin/dashboard.php');
+            exit();
         } else {
             header('Location: index.php');
+            exit();
         }
-        exit(); // Ensure no further code is executed after redirect
     } else {
         $loginErr = 'Invalid email/password';
     }
 } else {
     if (isset($_SESSION['customer'])) {
-        if ($_SESSION['customer']['isAdmin']) {
-            header('Location: dashboard.php');
+        // Convert string values from database to boolean
+        $_SESSION['customer']['isAdmin'] = (bool)$_SESSION['customer']['isAdmin'];
+        $_SESSION['customer']['isStaff'] = (bool)$_SESSION['customer']['isStaff'];
+        
+        if ($_SESSION['customer']['isAdmin'] == true || $_SESSION['customer']['isStaff'] == true) {
+            header('Location: admin/dashboard.php');
             exit();
         }
     }

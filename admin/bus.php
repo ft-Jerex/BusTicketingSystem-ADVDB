@@ -1,6 +1,6 @@
 <?php
-require_once 'database.php';
-require 'sanitize.php'; // Include the sanitize.php file
+require_once '../database.php';
+require '../sanitize.php'; // Include the sanitize.php file
 
 session_start();
 if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
@@ -102,7 +102,7 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
             <hr class="menu-itemHR">
-            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
+            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">

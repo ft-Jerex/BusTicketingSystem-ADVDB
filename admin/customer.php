@@ -1,5 +1,5 @@
 <?php
-require_once 'database.php';
+require_once '../database.php';
 $db = new Database();
 $conn = $db->connect();
 
@@ -92,7 +92,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <li><a class="active_link" href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
             <hr class="menu-itemHR">
-            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
+            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">

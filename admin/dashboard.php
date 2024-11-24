@@ -1,12 +1,12 @@
 <?php
-require_once 'database.php';
+require_once '../database.php';
 $db = new Database();
 $conn = $db->connect();
 
 session_start();
 
 
-if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
+if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin'] || !$_SESSION['customer']['isStaff']) {
     header('Location: login.php');
     exit();
 }
@@ -89,8 +89,9 @@ $items = [
             <li><a href="route.php" class="menu-item">Route</a></li>
             <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
+            <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
             <hr class="menu-itemHR">
-            <li><a href="logout.php" class="logoutBtn">Logout</a></li>
+            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
     </section>
     <main class="main">
