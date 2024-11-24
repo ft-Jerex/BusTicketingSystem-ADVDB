@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkbox Design</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .custom-checkbox {
+        display: none; /* Hide the default checkbox */
+      }
+
+      .checkbox-label {
+        display: inline-block;
+        width: 150px; /* Set width for the box */
+        height: 50px; /* Set height for the box */
+        border: 2px solid #007bff; /* Border color */
+        border-radius: 5px; /* Rounded corners */
+        background-color: white; /* Background color */
+        color: #007bff; /* Text color */
+        text-align: center; /* Center text */
+        line-height: 50px; /* Center vertically */
+        cursor: pointer; /* Pointer on hover */
+        transition: background-color 0.3s, color 0.3s; /* Transition effects */
+      }
+
+      .custom-checkbox:checked + .checkbox-label {
+        background-color: #007bff; /* Background color when checked */
+        color: white; /* Text color when checked */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="checkbox-container">
+      <input type="checkbox" id="custom-checkbox" class="custom-checkbox" />
+      <label for="custom-checkbox" class="checkbox-label">Check this box</label>
+    </div>
+  </body>
+</html>

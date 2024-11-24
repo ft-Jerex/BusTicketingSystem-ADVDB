@@ -28,6 +28,14 @@ if (isset($_GET['buy'])) {
     exit();
 }
 
+// Function to get the full name of the logged-in user
+function getFullName() {
+    if (isset($_SESSION['customer'])) {
+        return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
+    }
+    return '';
+}
+
 class BookingSystem extends Database
 {
     private $db;
@@ -82,7 +90,10 @@ if (!$customer_id) {
 $customer_details = $bookingSystem->getCustomerDetails($customer_id);
 $routes = $bookingSystem->getRouteDetails();
 
+function bookingAlert(){
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $bookingSystem = new BookingSystem();
+    $customer_id = $_SESSION['customer_id'] ?? null;
     $result = $bookingSystem->addBooking(
         $customer_id,
         $_POST['bus_id'],
@@ -91,7 +102,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_POST['date_book']
     );
     echo $result ? "Booking added successfully." : "Failed to add booking.";
-}
+     }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -100,18 +112,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking System</title>
-    <link rel="stylesheet" href="./userStyle1.css">
+    <link rel="stylesheet" href="./userStyle.css">
 </head>
 <body>
 <div class="container-header">
     <header>
-        <a href="./index.php" class="logo">Return Home</a>
+        <a href="./index.php" class="logo"><img src="./img/arrow-left-solid.svg" alt=""></a>
 
         <?php if ($isLoggedIn): ?>
             <div class="dropdown">
                 <button class="dropbtn"></button>
-                <div class="dropdown-content">
-                    <a href="?logout=1">Logout</a>
+                    <div class="dropdown-content">
+                    <div class="username"><?php echo getFullName(); ?></div>
+                    <hr>
+                    <a href=""><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
+                    <a href="?logout=1"><img class="icon-dropdown" src="./img/right-from-bracket-solid.svg" alt=""> Logout</a>
                 </div>
             </div>
         <?php else: ?>
@@ -123,6 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <main class="main">
     <div id="main-content">
         <h1 class="booking-title">Add a Booking</h1>
+        <?php echo bookingAlert();?>
         <div class="AddEdit">
             <form method="post" action="">
                 <input type="hidden" name="bus_id" id="bus_id">
@@ -153,7 +169,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <input type="date" name="date_book" id="date_book" required><br>
 
                 <label>Select Seat:</label>
+                <section class="seat-section">
                 <div id="seat_grid"></div>
+                </section>
 
                 <input type="submit" value="Submit">
             </form>
@@ -175,44 +193,68 @@ document.addEventListener('DOMContentLoaded', function() {
     dateBookInput.addEventListener('change', updateSeatGrid);
 
     function updateSeatGrid() {
-        const routeId = routeSelect.value;
-        const dateBook = dateBookInput.value;
-        const totalSeats = parseInt(routeSelect.selectedOptions[0].dataset.seats);
-        busIdInput.value = routeSelect.selectedOptions[0].dataset.busId;
+    const routeId = routeSelect.value;
+    const dateBook = dateBookInput.value;
+    const totalSeats = parseInt(routeSelect.selectedOptions[0].dataset.seats);
+    busIdInput.value = routeSelect.selectedOptions[0].dataset.busId;
 
-        // Update route details
-        if (routeId) {
-            routeCost.textContent = routeSelect.selectedOptions[0].dataset.cost;
-            routeSeats.textContent = totalSeats;
-            routeDepartureTime.textContent = routeSelect.selectedOptions[0].dataset.departureTime;
-            routeDetails.style.display = 'block';
-        } else {
-            routeDetails.style.display = 'none';
-        }
-
-        if (routeId && dateBook && totalSeats) {
-            fetch(`get_occupied_seats.php?route_id=${routeId}&date_book=${dateBook}`)
-                .then(response => response.json())
-                .then(occupiedSeats => {
-                    seatGrid.innerHTML = '';
-                    for (let i = 1; i <= totalSeats; i++) {
-                        const input = document.createElement('input');
-                        input.type = 'radio';
-                        input.name = 'seat_taken';
-                        input.value = i;
-                        input.id = `seat_${i}`;
-                        if (occupiedSeats.includes(i)) {
-                            input.disabled = true;
-                        }
-                        const label = document.createElement('label');
-                        label.htmlFor = `seat_${i}`;
-                        label.textContent = i;
-                        seatGrid.appendChild(input);
-                        seatGrid.appendChild(label);
-                    }
-                });
-        }
+    // Update route details
+    if (routeId) {
+        routeCost.textContent = routeSelect.selectedOptions[0].dataset.cost;
+        routeSeats.textContent = totalSeats;
+        routeDepartureTime.textContent = routeSelect.selectedOptions[0].dataset.departureTime;
+        routeDetails.style.display = 'block';
+    } else {
+        routeDetails.style.display = 'none';
     }
+
+    if (routeId && dateBook && totalSeats) {
+        fetch(`get_occupied_seats.php?route_id=${routeId}&date_book=${dateBook}`)
+            .then(response => response.json())
+            .then(occupiedSeats => {
+                seatGrid.innerHTML = '';
+                for (let i = 1; i <= totalSeats; i++) {
+                    // Create a hidden input
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = 'seat_taken';
+                    input.value = i;
+                    input.id = `seat_${i}`;
+                    
+                    // Create the label for the seat
+                    const label = document.createElement('label');
+                    label.htmlFor = `seat_${i}`;
+                    label.textContent = i;
+
+                    // Check if the seat is occupied
+                    if (occupiedSeats.includes(i)) {
+                        label.classList.add('occupied'); // Add the occupied class to the label
+                        label.style.cursor = 'not-allowed'; // Change cursor to indicate it's not selectable
+                    } else {
+                        // Add click event to handle seat selection
+                        label.addEventListener('click', function() {
+                            // Remove 'selected' class from all labels
+                            const allLabels = seatGrid.querySelectorAll('label');
+                            allLabels.forEach(lbl => {
+                                lbl.classList.remove('selected'); // Remove selected class
+                                lbl.style.backgroundColor = 'white'; // Reset background color
+                                lbl.style.color = '#007bff'; // Reset text color
+                            });
+                            
+                            // Mark the current seat as selected
+                            input.checked = true; // Check the hidden input
+                            label.classList.add('selected'); // Add selected class
+                            label.style.backgroundColor = '#007bff'; // Change background color
+                            label.style.color = 'white'; // Change text color
+                        });
+                    }
+
+                    seatGrid.appendChild(input);
+                    seatGrid.appendChild(label);
+                }
+            });
+    }
+}
 
     // Set minimum date for booking
     const today = new Date();

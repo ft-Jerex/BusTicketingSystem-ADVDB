@@ -26,6 +26,14 @@ if (isset($_GET['buy'])) {
     header('Location: buy.php');
     exit();
 }
+
+// Function to get the full name of the logged-in user
+function getFullName() {
+    if (isset($_SESSION['customer'])) {
+        return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
+    }
+    return '';
+}
 ?>
 
 <!DOCTYPE html>
@@ -34,7 +42,7 @@ if (isset($_GET['buy'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home</title>
-  <link rel="stylesheet" href="userStyle1.css">
+  <link rel="stylesheet" href="userStyle.css">
 
 </head>
 <body>
@@ -51,18 +59,21 @@ if (isset($_GET['buy'])) {
             <div class="dropdown">
                 <button class="dropbtn"></button>
                 <div class="dropdown-content">
-                    <a href="?logout=1">Logout</a>
+                    <div class="username"><?php echo getFullName(); ?></div>
+                    <hr>
+                    <a href=""><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
+                    <a href="?logout=1"><img class="icon-dropdown" src="./img/right-from-bracket-solid.svg" alt=""> Logout</a>
                 </div>
             </div>
         <?php else: ?>
-            <a href="login.php" class="nav-link">Sign In</a>
+            <a href="login.php" class="nav-link signin-btn">Sign In</a>
         <?php endif; ?>
     </header>
 </div>
 
 <div class="container-banner">
     <h1>BIENVENIDOS ZAMBOANGUEÑOS</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <p>Zamboanga Integrated Bus Terminal is the main hub for buses in Zamboanga City, connecting passengers to nearby provinces. Located in Divisoria, it offers essential services like ticketing and waiting areas for a smooth travel experiences.</p>
     <a href="?buy=1" class="button">Buy Ticket Now</a>
 </div>
 
@@ -71,8 +82,8 @@ if (isset($_GET['buy'])) {
 
     <div class="featurette">
         <div class="featurette-text">
-            <h2>First featurette heading.</h2>
-            <p>Another featurette? Of course. More placeholder content here to give you an idea of how this layout would work with some actual real-world content in place.</p>
+            <h2 class="featurette-h2">Centralized Transportation Hub</h2>
+            <p>The Zamboanga Integrated Bus Terminal connects passengers to key provinces in the Zamboanga Peninsula or beyond, making it a convenient transit point for regional travel.</p>
         </div>
         <div class="featurette-image1"></div>
     </div>
@@ -82,8 +93,8 @@ if (isset($_GET['buy'])) {
     <div class="featurette">
         <div class="featurette-image2"></div>
         <div class="featurette-text">
-            <h2>Oh yeah, it's that good.</h2>
-            <p>Another featurette? Of course. More placeholder content here to give you an idea of how this layout would work with some actual real-world content in place.</p>
+            <h2 class="featurette-h2">Modern Amenities</h2>
+            <p>The terminal offers facilities such as waiting areas, food stalls, and restrooms, providing a comfortable experience for travelers.</p>
         </div>
     </div>
 
@@ -92,16 +103,16 @@ if (isset($_GET['buy'])) {
     <h2 class="about">About</h2>
     <div class="about-section">
         <div class="about-item">
-            <h3>Featured title</h3>
-            <p>Paragraph of text beneath the heading to explain the heading. We'll add onto it with another sentence and probably just keep going until we run out of words.</p>
+            <h3>Inaugration</h3>
+            <p>The Zamboanga Integrated Bus Terminal started its operations in 2015 to improve the city's transportation system and connect various provinces in the region.</p>
         </div>
         <div class="about-item">
-            <h3>Featured title</h3>
-            <p>Paragraph of text beneath the heading to explain the heading. We'll add onto it with another sentence and probably just keep going until we run out of words.</p>
+            <h3>Purpose</h3>
+            <p>The terminal was established to provide a more organized and efficient transportation service, offering modern facilities for the convenience of passengers.</p>
         </div>
         <div class="about-item">
-            <h3>Featured title</h3>
-            <p>Paragraph of text beneath the heading to explain the heading. We'll add onto it with another sentence and probably just keep going until we run out of words.</p>
+            <h3>Security</h3>
+            <p>The Zamboanga Integrated Bus Terminal is equipped with security measures such as CCTV cameras and security personnel to ensure the safety of passengers and staff.</p>
         </div>
     </div>
 </main>
@@ -113,7 +124,7 @@ if (isset($_GET['buy'])) {
             <li><a href="#" class="footer-link">Buy Ticket</a></li>
             <li><a href="#" class="footer-link">About</a></li>
         </ul>
-        <p>&copy; 2024 Your Company. All rights reserved.</p>
+        <p>&copy; 2024 IBT. All rights reserved.</p>
     </div>
 </footer>
 

@@ -8,6 +8,13 @@ if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
     exit();
 }
 
+function getFullName() {
+    if (isset($_SESSION['customer'])) {
+        return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
+    }
+    return '';
+}
+
 $db = new Database();
 $conn = $db->connect();
 
@@ -86,7 +93,8 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="admin-img"></div>
     </header>
     <section class="sidebar">
-    <div class="IBT-admin">Admin</div>
+    <!-- <div class="IBT-admin">Admin</div> -->
+    <div class="admin-name">Admin: <?php echo getFullName()?></div>
         <ul>
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
             <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>

@@ -7,6 +7,13 @@ if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
     exit();
 }
 
+function getFullName() {
+    if (isset($_SESSION['customer'])) {
+        return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
+    }
+    return '';
+}
+
 class BookingSystem extends Database
 {
     private $db;
@@ -134,7 +141,9 @@ $existingBookings = $bookingSystem->getExistingBookings();
         <div class="admin-img"></div>
     </header>
     <section class="sidebar">
-    <div class="IBT-admin">Admin</div>
+    <!-- <div class="IBT-admin">Admin</div> -->
+    <div class="admin-name">Admin: <?php echo getFullName()?></div>
+    
         <ul>
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
             <li><a href="bus.php" class="menu-item">Bus</a></li>
@@ -149,7 +158,6 @@ $existingBookings = $bookingSystem->getExistingBookings();
         <div id="main-content">
         <h1>Booking Management</h1>
         <div class="AddEdit">
-
 <form method="post" action="">
     <input type="hidden" name="action" id="action" value="add">
     <input type="hidden" name="booking_id" id="booking_id">
@@ -200,6 +208,7 @@ $existingBookings = $bookingSystem->getExistingBookings();
     </div>
 
 <h2>Existing Bookings</h2>
+<div class="table-container">
 <table border="1">
     <tr>
         <th>Booking ID</th>
@@ -227,6 +236,7 @@ $existingBookings = $bookingSystem->getExistingBookings();
         </tr>
     <?php endforeach; ?>
 </table>
+    </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
