@@ -27,6 +27,7 @@ if (isset($_GET['buy'])) {
     exit();
 }
 
+
 // Function to get the full name of the logged-in user
 function getFullName() {
     if (isset($_SESSION['customer'])) {
@@ -61,7 +62,7 @@ function getFullName() {
                 <div class="dropdown-content">
                     <div class="username"><?php echo getFullName(); ?></div>
                     <hr>
-                    <a href=""><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
+                    <a href="transaction.php"><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
                     <a href="?logout=1"><img class="icon-dropdown" src="./img/right-from-bracket-solid.svg" alt=""> Logout</a>
                 </div>
             </div>

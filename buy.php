@@ -125,7 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="dropdown-content">
                     <div class="username"><?php echo getFullName(); ?></div>
                     <hr>
-                    <a href=""><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
+                    <a href="transaction.php"><img class="icon-dropdown" src="./img/receipt-solid.svg" alt=""> Transactions</a>
                     <a href="?logout=1"><img class="icon-dropdown" src="./img/right-from-bracket-solid.svg" alt=""> Logout</a>
                 </div>
             </div>

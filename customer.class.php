@@ -1,5 +1,4 @@
 <?php
-
 require_once 'database.php';
 
 class Customer {
@@ -10,11 +9,9 @@ class Customer {
     public $email = '';
     public $password = '';
     public $role = '';
-    public $isAdmin = false;
-    public $isCustomer = true;
-    public $isStaff = false;
-
-    
+    public $isAdmin = 0;
+    public $isCustomer = 1;
+    public $isStaff = 0;
 
     protected $db;
 
@@ -23,37 +20,32 @@ class Customer {
     }
 
     function addCustomer() {
-        $this->role = 'customer'; // Set role for customer
-        $this->isAdmin = false; // Ensure isAdmin is false for customers
-        $this->isCustomer = true; // Ensure isCustomer is true for customers
-        $this->isStaff = false; // Ensure isCustomer is true for customers
-
-
+        $this->role = 'customer';
+        $this->isAdmin = 0;
+        $this->isCustomer = 1;
+        $this->isStaff = 0;
         return $this->insertUser();
     }
 
     function addAdmin() {
-        $this->role = 'admin'; // Set role for admin
-        $this->isAdmin = true; // Set isAdmin to true
-        $this->isCustomer = false; // Set isCustomer to false
-        $this->isStaff = false; // Ensure isCustomer is true for customers
-
-
+        $this->role = 'admin';
+        $this->isAdmin = 1;
+        $this->isCustomer = 0;
+        $this->isStaff = 0;
         return $this->insertUser();
     }
 
     function addStaff() {
-        $this->role = 'staff'; // Set role for admin
-        $this->isAdmin = false; // Set isAdmin to true
-        $this->isCustomer = false; // Set isCustomer to false
-        $this->isStaff = true; // Ensure isCustomer is true for customers
-
-
+        $this->role = 'staff';
+        $this->isAdmin = 0;
+        $this->isCustomer = 0;
+        $this->isStaff = 1;
         return $this->insertUser();
     }
 
     private function insertUser() {
-        $sql = "INSERT INTO customer (first_name, last_name, contact_no, email, password, role, isAdmin, isCustomer, isStaff) VALUES (:first_name, :last_name, :contact_no, :email, :password, :role, :isAdmin, :isCustomer, :isStaff);";
+        $sql = "INSERT INTO customer (first_name, last_name, contact_no, email, password, role, isAdmin, isCustomer, isStaff) 
+                VALUES (:first_name, :last_name, :contact_no, :email, :password, :role, :isAdmin, :isCustomer, :isStaff)";
         $query = $this->db->connect()->prepare($sql);
 
         $query->bindParam(':first_name', $this->first_name);
@@ -63,10 +55,9 @@ class Customer {
         $hashpassword = password_hash($this->password, PASSWORD_DEFAULT);
         $query->bindParam(':password', $hashpassword);
         $query->bindParam(':role', $this->role);
-        $query->bindParam(':isAdmin', $this->isAdmin);
-        $query->bindParam(':isCustomer', $this->isCustomer);
-        $query->bindParam(':isStaff', $this->isStaff);
-
+        $query->bindParam(':isAdmin', $this->isAdmin, PDO::PARAM_INT);
+        $query->bindParam(':isCustomer', $this->isCustomer, PDO::PARAM_INT);
+        $query->bindParam(':isStaff', $this->isStaff, PDO::PARAM_INT);
 
         return $query->execute();
     }
@@ -74,7 +65,7 @@ class Customer {
     function emailExist($email, $excludeID = null) {
         $sql = "SELECT COUNT(*) FROM customer WHERE email = :email";
         if ($excludeID) {
-            $sql .= " and customer_id != :excludeID"; // Adjusted to use customer_id
+            $sql .= " AND customer_id != :excludeID";
         }
 
         $query = $this->db->connect()->prepare($sql);
@@ -84,37 +75,38 @@ class Customer {
             $query->bindParam(':excludeID', $excludeID);
         }
 
-        $count = $query->execute() ? $query->fetchColumn() : 0;
-
-        return $count > 0;
+        return $query->execute() ? $query->fetchColumn() > 0 : false;
     }
 
     function login($email, $password) {
-        $sql = "SELECT * FROM customer WHERE email = :email LIMIT 1;";
+        $sql = "SELECT * FROM customer WHERE email = :email LIMIT 1";
         $query = $this->db->connect()->prepare($sql);
-
-        $query->bindParam('email', $email);
+        $query->bindParam(':email', $email);
 
         if ($query->execute()) {
-            $data = $query->fetch();
+            $data = $query->fetch(PDO::FETCH_ASSOC);
             if ($data && password_verify($password, $data['password'])) {
                 return true;
             }
         }
-
         return false;
     }
 
     function fetch($email) {
-        $sql = "SELECT * FROM customer WHERE email = :email LIMIT 1;";
+        $sql = "SELECT customer_id, first_name, last_name, contact_no, email, role, 
+                CAST(isAdmin AS UNSIGNED) as isAdmin, 
+                CAST(isCustomer AS UNSIGNED) as isCustomer, 
+                CAST(isStaff AS UNSIGNED) as isStaff 
+                FROM customer 
+                WHERE email = :email 
+                LIMIT 1";
+        
         $query = $this->db->connect()->prepare($sql);
-
-        $query->bindParam('email', $email);
-        $data = null;
+        $query->bindParam(':email', $email);
+        
         if ($query->execute()) {
-            $data = $query->fetch();
+            return $query->fetch(PDO::FETCH_ASSOC);
         }
-
-        return $data;
+        return null;
     }
 }

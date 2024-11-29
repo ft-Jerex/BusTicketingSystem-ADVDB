@@ -19,15 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['customer_id'] = $data['customer_id'];
         $_SESSION['customer'] = $data;
 
-        // Convert string values from database to boolean
-        $_SESSION['customer']['isAdmin'] = (bool)$data['isAdmin'];
-        $_SESSION['customer']['isStaff'] = (bool)$data['isStaff'];
-        
-        // Debug line - remove in production
-        var_dump($_SESSION['customer']);
-
-        // Check both isAdmin and isStaff flags
-        if ($_SESSION['customer']['isAdmin'] == true || $_SESSION['customer']['isStaff'] == true) {
+        // Check role and boolean flags
+        if ($data['role'] === 'admin' || $data['role'] === 'staff' || 
+            $data['isAdmin'] == 1 || $data['isStaff'] == 1) {
             header('Location: admin/dashboard.php');
             exit();
         } else {
@@ -39,12 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 } else {
     if (isset($_SESSION['customer'])) {
-        // Convert string values from database to boolean
-        $_SESSION['customer']['isAdmin'] = (bool)$_SESSION['customer']['isAdmin'];
-        $_SESSION['customer']['isStaff'] = (bool)$_SESSION['customer']['isStaff'];
-        
-        if ($_SESSION['customer']['isAdmin'] == true || $_SESSION['customer']['isStaff'] == true) {
+        if ($_SESSION['customer']['role'] === 'admin' || 
+            $_SESSION['customer']['role'] === 'staff' ||
+            $_SESSION['customer']['isAdmin'] == 1 || 
+            $_SESSION['customer']['isStaff'] == 1) {
             header('Location: admin/dashboard.php');
+            exit();
+        } else {
+            header('Location: index.php');
             exit();
         }
     }
