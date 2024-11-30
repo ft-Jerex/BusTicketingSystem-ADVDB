@@ -43,7 +43,7 @@ function getFullName() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home</title>
-  <link rel="stylesheet" href="userStyle.css">
+  <link rel="stylesheet" href="userStyle1.css">
 
 </head>
 <body>
@@ -78,7 +78,7 @@ function getFullName() {
     <a href="?buy=1" class="button">Buy Ticket Now</a>
 </div>
 
-<main class="container">
+<!-- <main class="container"> -->
     <hr class="featurette-divider" />
 
     <div class="featurette">
@@ -99,7 +99,7 @@ function getFullName() {
         </div>
     </div>
 
-    <hr class="featurette-divider" id="aboutDivider"/>
+    <!-- <hr class="featurette-divider" id="aboutDivider"/> -->
 
     <h2 class="about">About</h2>
     <div class="about-section">
