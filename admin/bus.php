@@ -3,8 +3,8 @@ require_once '../database.php';
 require '../sanitize.php'; // Include the sanitize.php file
 
 session_start();
-if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin']) {
-    header('Location: ' . $_SERVER['REQUEST_URI']);
+if (!isset($_SESSION['customer'])) {
+    header('Location: ../login.php');
     exit();
 }
 
@@ -90,21 +90,28 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
-        <div class="admin-img"></div>
     </header>
     <section class="sidebar">
-    <!-- <div class="IBT-admin">Admin</div> -->
     <div class="admin-name">Admin: <?php echo getFullName()?></div>
-        <ul>
-            <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
-            <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>
-            <li><a href="route.php" class="menu-item">Route</a></li>
-            <li><a href="customer.php" class="menu-item">Customer</a></li>
-            <li><a href="booking.php" class="menu-item">Bookings</a></li>
-            <hr class="menu-itemHR">
-            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-        </ul>
-    </section>
+    <ul>
+        <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
+        <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>
+        <li><a href="route.php" class="menu-item">Route</a></li>
+        <li><a href="customer.php" class="menu-item">Customer</a></li>
+        <li><a href="booking.php" class="menu-item">Bookings</a></li>
+        
+        <?php 
+        // Only show Staff Management for admin users
+        if (isset($_SESSION['customer']) && 
+            ($_SESSION['customer']['role'] === 'admin' || 
+             $_SESSION['customer']['isAdmin'] == 1)) : ?>
+            <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
+        <?php endif; ?>
+        
+        <hr class="menu-itemHR">
+        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
+    </ul>
+</section>
     <main class="main">
         <div id="main-content">
            

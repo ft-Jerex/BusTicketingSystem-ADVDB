@@ -6,11 +6,15 @@ $conn = $db->connect();
 session_start();
 
 
-if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin'] || !$_SESSION['customer']['isStaff']) {
-    header('Location: login.php');
-    exit();
-}
-
+// if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin'] || !$_SESSION['customer']['isStaff']) {
+//     header('Location: login.php');
+//     exit();
+// }
+        if (!isset($_SESSION['customer'])) {
+            header('Location: ../login.php');
+            exit();
+        }
+        
 function getFullName() {
     if (isset($_SESSION['customer'])) {
         return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
@@ -78,22 +82,29 @@ $items = [
 <body>
     <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
-        <button class="admin-img"></button>
+
     </header>
     <section class="sidebar">
-    <!-- <div class="IBT-admin">Admin</div> -->
     <div class="admin-name">Admin: <?php echo getFullName()?></div>
-        <ul>
-            <li><a class="active_link" href="dashboard.php" class="menu-item">Dashboard</a></li>
-            <li><a href="bus.php" class="menu-item">Bus</a></li>
-            <li><a href="route.php" class="menu-item">Route</a></li>
-            <li><a href="customer.php" class="menu-item">Customer</a></li>
-            <li><a href="booking.php" class="menu-item">Bookings</a></li>
+    <ul>
+        <li><a class="active_link" href="dashboard.php" class="menu-item">Dashboard</a></li>
+        <li><a href="bus.php" class="menu-item">Bus</a></li>
+        <li><a href="route.php" class="menu-item">Route</a></li>
+        <li><a href="customer.php" class="menu-item">Customer</a></li>
+        <li><a href="booking.php" class="menu-item">Bookings</a></li>
+        
+        <?php 
+        // Only show Staff Management for admin users
+        if (isset($_SESSION['customer']) && 
+            ($_SESSION['customer']['role'] === 'admin' || 
+             $_SESSION['customer']['isAdmin'] == 1)) : ?>
             <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
-            <hr class="menu-itemHR">
-            <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-        </ul>
-    </section>
+        <?php endif; ?>
+        
+        <hr class="menu-itemHR">
+        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
+    </ul>
+</section>
     <main class="main">
         <div id="main-content" class="main-content">
             <h1>Welcome to the Dashboard</h1>

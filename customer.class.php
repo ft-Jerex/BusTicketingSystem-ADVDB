@@ -109,4 +109,19 @@ class Customer {
         }
         return null;
     }
+
+    public function getAllStaff() {
+    $query = "SELECT * FROM customer WHERE role = 'staff' OR isStaff = 1";
+    $result = $this->db->connect()->query($query);
+    
+    if ($result->rowCount() > 0) {
+        $staffAccounts = [];
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            $staffAccounts[] = $row;
+        }
+        return $staffAccounts;
+    }
+    
+    return [];
+}
 }

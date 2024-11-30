@@ -7,10 +7,22 @@ $message = '';
 
 session_start();
 // Modify the condition to allow either admin OR staff
-if (!isset($_SESSION['customer']) || (!$_SESSION['customer']['isAdmin'] && !$_SESSION['customer']['isStaff'])) {
-    header('Location: login.php');
+// Check if user is logged in
+if (!isset($_SESSION['customer'])) {
+    header('Location: ../login.php');
     exit();
 }
+
+// Check if user is admin
+if ($_SESSION['customer']['role'] !== 'admin' && 
+    $_SESSION['customer']['isAdmin'] != 1) {
+    // Redirect to dashboard or show an access denied message
+    header('Location: dashboard.php');
+    exit();
+}
+
+// Fetch all staff accounts
+$staffAccounts = $customer->getAllStaff();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $first_name = $_POST['first_name'] ?? '';
@@ -38,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if ($result) {
             $message = "Staff registration successful!";
+            // Refresh staff accounts after adding
+            $staffAccounts = $customer->getAllStaff();
         } else {
             $message = "Registration failed. Please try again.";
         }
@@ -57,13 +71,27 @@ function getFullName() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Staff</title>
+    <title>Staff Management</title>
     <link rel="stylesheet" href="adminStyle.css">
+    <style>
+        .staff-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .staff-table th, .staff-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .staff-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
-        <button class="admin-img"></button>
     </header>
     <section class="sidebar">
         <div class="admin-name">Admin: <?php echo getFullName()?></div>
@@ -71,8 +99,17 @@ function getFullName() {
             <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
             <li><a href="bus.php" class="menu-item">Bus</a></li>
             <li><a href="route.php" class="menu-item">Route</a></li>
-            <li><a class="active_link" href="customer.php" class="menu-item">Customer</a></li>
+            <li><a href="customer.php" class="menu-item">Customer</a></li>
             <li><a href="booking.php" class="menu-item">Bookings</a></li>
+            
+            <?php 
+            // Only show Staff Management for admin users
+            if (isset($_SESSION['customer']) && 
+                ($_SESSION['customer']['role'] === 'admin' || 
+                 $_SESSION['customer']['isAdmin'] == 1)) : ?>
+                <li><a href="registerStaff.php" class="active_link menu-item">Staff Management</a></li>
+            <?php endif; ?>
+            
             <hr class="menu-itemHR">
             <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
         </ul>
@@ -94,6 +131,38 @@ function getFullName() {
                 <?php if (!empty($message)): ?>
                     <div class="message"><?php echo $message; ?></div>
                 <?php endif; ?>
+            </div>
+
+            <div class="staff-list">
+                <h2>Current Staff Accounts</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Contact Number</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($staffAccounts)): ?>
+                            <?php foreach ($staffAccounts as $staff): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($staff['customer_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($staff['first_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($staff['last_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($staff['contact_no']); ?></td>
+                                    <td><?php echo htmlspecialchars($staff['email']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5">No staff accounts found.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>

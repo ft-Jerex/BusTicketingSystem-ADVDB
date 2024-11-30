@@ -20,6 +20,7 @@ body {
   padding: 10px 20px; /* Padding for the header */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 
+  z-index: 1;
   position: sticky;
   top: 0;
   grid-column: 2/3;
@@ -29,27 +30,16 @@ body {
   font-size: 1.7rem;
   font-weight: bolder;
   font-style: oblique;
-  color: #ff3950;
+  color: #313a46;
   text-shadow: 1px 1px 1px black;
 
   flex-grow: 1; /* Allow the content to take up available space */
   text-align: center; /* Center the text */
 }
-.admin-img {
-  background-image: url(./img/user.png);
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  margin-left: auto;
-}
 
 /* FOR THE SIDEBAR */
 .sidebar {
-  background-color: #ff3950;
+  background-color: #313a46;
   top: 0;
   position: sticky;
   align-self: start;
@@ -68,7 +58,7 @@ body {
   color: #fff;
   font-weight: bold;
   font-size: 18px;
-  height: 30px;
+  height: 70px;
 }
 
 .IBT-admin {
@@ -89,6 +79,8 @@ body {
   display: flex;
   text-align: center;
   padding-left: 10px;
+  text-decoration: none;
+  color: #fff;
 
   position: relative;
   overflow: hidden;
@@ -96,13 +88,12 @@ body {
 }
 
 .menu-itemHR {
-  width: 80%;
-  display: flex;
-  justify-content: center;
+  width: 90%;
+  margin: auto;
 }
 
 .sidebar a:hover {
-  background-color: #ff001e;
+  background-color: #283950;
   border: solid 1px whitesmoke;
   transform: translateX(20px);
 }
@@ -112,7 +103,7 @@ a {
   font-size: 1.25em;
 }
 .active_link {
-  background-color: #ff001e;
+  background-color: #283950;
   border: solid 1px whitesmoke;
 }
 
@@ -178,7 +169,9 @@ form,
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
+.needs-validation {
+  height: 100%;
+}
 .table-container {
   max-height: 300px; /* Set a fixed height */
   overflow-y: auto; /* Enable vertical scrolling */
