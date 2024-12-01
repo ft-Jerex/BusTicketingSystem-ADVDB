@@ -1,6 +1,6 @@
 <?php
 require_once '../database.php';
-require '../sanitize.php'; // Include the sanitize.php file
+require '../sanitize.php';
 
 session_start();
 if (!isset($_SESSION['customer'])) {
@@ -18,7 +18,15 @@ function getFullName() {
 $db = new Database();
 $conn = $db->connect();
 
-$errorBusNo = ""; // Variable to hold the error message
+$errorBusNo = "";
+
+// Pagination setup
+$resultsPerPage = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $resultsPerPage;
+
+// Search functionality
+$searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
 
 // Handle Create
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add') {
@@ -38,7 +46,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $sql = "INSERT INTO bus (bus_no, bus_type, bus_seat) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$busNo, $busType, $busSeat]);
-        echo "Bus added successfully!";
+        
+        // Redirect to the same page without query parameters to reset view
+        header("Location: bus.php");
+        exit();
     }
 }
 
@@ -61,6 +72,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $sql = "UPDATE bus SET bus_no=?, bus_type=?, bus_seat=? WHERE bus_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$busNo, $busType, $busSeat, $id]);
+        
+        // Redirect to the same page without query parameters to reset view
+        header("Location: bus.php");
+        exit();
     }
 }
 
@@ -70,12 +85,42 @@ if (isset($_GET['delete'])) {
     $sql = "DELETE FROM bus WHERE bus_id=?";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$id]);
+    
+    // Redirect to the same page without query parameters to reset view
+    header("Location: bus.php");
+    exit();
 }
 
-// Read Buses
-$sql = "SELECT * FROM bus";
+// Prepare search and pagination query
+$searchCondition = $searchTerm ? "WHERE bus_no LIKE ? OR bus_type LIKE ?" : "";
+$countSql = "SELECT COUNT(*) FROM bus $searchCondition";
+$sql = "SELECT * FROM bus $searchCondition LIMIT ? OFFSET ?";
+
+$stmt = $conn->prepare($countSql);
+if ($searchTerm) {
+    $stmt->execute(["%$searchTerm%", "%$searchTerm%"]);
+} else {
+    $stmt->execute();
+}
+$totalResults = $stmt->fetchColumn();
+$totalPages = ceil($totalResults / $resultsPerPage);
+
+// Adjust page number if it's out of bounds
+$page = max(1, min($page, $totalPages));
+$offset = ($page - 1) * $resultsPerPage;
+
 $stmt = $conn->prepare($sql);
-$stmt->execute();
+if ($searchTerm) {
+    $stmt->bindValue(1, "%$searchTerm%", PDO::PARAM_STR);
+    $stmt->bindValue(2, "%$searchTerm%", PDO::PARAM_STR);
+    $stmt->bindValue(3, $resultsPerPage, PDO::PARAM_INT);
+    $stmt->bindValue(4, $offset, PDO::PARAM_INT);
+    $stmt->execute();
+} else {
+    $stmt->bindValue(1, $resultsPerPage, PDO::PARAM_INT);
+    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+    $stmt->execute();
+}
 $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -86,13 +131,59 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Management</title>
     <link rel="stylesheet" href="./adminStyle.css">
+    <style>
+        .table-controls {
+
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: black;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .form-controls {
+            background-color: transparent;
+            box-shadow: none;
+            padding: 0px;
+        }
+        .form-controls input{
+            width: 300px;
+
+        }
+        .form-controls .search-Btn, .form-controls .refresh-Btn {
+            height: 40px;   
+            padding: 10px;
+            font-size: 16px;
+            color: #000000;
+            background-color: #D3D3D3;
+            border:none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
 <header class="header">
-        <p class="header-p">IBT TICKETING SYSTEM</p>
-    </header>
-    <section class="sidebar">
+    <p class="header-p">IBT TICKETING SYSTEM</p>
+</header>
+<section class="sidebar">
     <div class="admin-name">Admin: <?php echo getFullName()?></div>
+    <hr class="menu-itemHR">
     <ul>
         <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
         <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>
@@ -112,18 +203,17 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
     </ul>
 </section>
-    <main class="main">
-        <div id="main-content">
-           
-            <h1>Bus Management</h1>
-            <div class="AddEditBus"> 
-
+<main class="main">
+    <div id="main-content">
+        <h1>Bus Management</h1>
+        <div class="AddEditBus"> 
+        <?php if (!isset($_GET['edit'])): ?>
             <form method="POST" action="">
             <h2>Add Bus</h2>
                 <input type="hidden" name="action" value="add">
                 <label for="bus_no">Bus No:</label>
                 <input type="text" name="bus_no" required><br>
-                <span style="color: red;"><?php echo htmlspecialchars($errorBusNo); ?></span><br> <!-- Error message for bus_no -->
+                <span style="color: red;"><?php echo htmlspecialchars($errorBusNo); ?></span><br>
                 
                 <label for="bus_type">Bus Type:</label>
                 <select name="bus_type" required>
@@ -136,6 +226,7 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 <input type="submit" value="Add Bus">
             </form>
+            <?php endif; ?>
 
             <?php if (isset($_GET['edit'])): 
                 $id = clean_input($_GET['edit']);
@@ -144,7 +235,6 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 $stmt->execute([$id]);
                 $bus = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                // Reset error message for edit
                 $errorBusNo = "";
             ?>
             
@@ -154,7 +244,7 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <input type="hidden" name="bus_id" value="<?php echo htmlspecialchars($bus['bus_id']); ?>">
                 <label for="bus_no">Bus No:</label>
                 <input type="text" name="bus_no" value="<?php echo htmlspecialchars($bus['bus_no']); ?>" required><br>
-                <span style="color: red;"><?php echo htmlspecialchars($errorBusNo); ?></span><br> <!-- Error message for bus_no -->
+                <span style="color: red;"><?php echo htmlspecialchars($errorBusNo); ?></span><br>
                 
                 <label for="bus_type">Bus Type:</label>
                 <select name="bus_type" required>
@@ -168,36 +258,61 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <input type="submit" value="Update Bus">
             </form>
             <?php endif; ?>
-            </div> 
+        </div> 
 
-            <h2>View Buses</h2>
-            <table border="1">
-                <tr>
-                    <th>ID</th>
-                    <th>Bus No</th>
-                    <th>Bus Type</th>
-                    <th>Number of Seats</th>
-                    <th>Actions</th>
-                </tr>
-                <?php foreach ($buses as $row): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['bus_id']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_no']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_type']); ?></td>
-                    <td><?php echo htmlspecialchars($row['bus_seat']); ?></td>
-                    <td>
-                        <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>">Edit</a>
-                        <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </table>
+        <h2>View Buses</h2>
+        <div class="table-controls">
+    <form class="form-controls" method="GET" action="bus.php">
+        <a href="bus.php" class="refresh-Btn">
+                Refresh
+            </a>
+        <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
+        <button type="submit" class="search-Btn">Search</button>
+    </form>
+</div>
 
-           
-                </div>
-            </main>
-    
+        <table border="1">
+            <tr>
+                <th>ID</th>
+                <th>Bus No</th>
+                <th>Bus Type</th>
+                <th>Number of Seats</th>
+                <th>Actions</th>
+            </tr>
+            <?php foreach ($buses as $row): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($row['bus_id']); ?></td>
+                <td><?php echo htmlspecialchars($row['bus_no']); ?></td>
+                <td><?php echo htmlspecialchars($row['bus_type']); ?></td>
+                <td><?php echo htmlspecialchars($row['bus_seat']); ?></td>
+                <td>
+                    <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>">Edit</a>
+                    <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
 
+        <!-- Pagination -->
+        <div class="pagination">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($searchTerm); ?>">Previous</a>
+            <?php endif; ?>
+
+            <?php
+            // Show page numbers
+            for ($i = 1; $i <= $totalPages; $i++) {
+                $activeClass = ($i == $page) ? 'active' : '';
+                echo "<a href='?page=$i&search=" . urlencode($searchTerm) . "' class='$activeClass'>$i</a>";
+            }
+            ?>
+
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($searchTerm); ?>">Next</a>
+            <?php endif; ?>
+        </div>
+    </div>
+</main>
 </body>
 </html>
 

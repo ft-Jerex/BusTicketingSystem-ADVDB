@@ -86,6 +86,7 @@ $items = [
     </header>
     <section class="sidebar">
     <div class="admin-name">Admin: <?php echo getFullName()?></div>
+    <hr class="menu-itemHR">
     <ul>
         <li><a class="active_link" href="dashboard.php" class="menu-item">Dashboard</a></li>
         <li><a href="bus.php" class="menu-item">Bus</a></li>

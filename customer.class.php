@@ -110,18 +110,46 @@ class Customer {
         return null;
     }
 
-    public function getAllStaff() {
-    $query = "SELECT * FROM customer WHERE role = 'staff' OR isStaff = 1";
-    $result = $this->db->connect()->query($query);
-    
-    if ($result->rowCount() > 0) {
-        $staffAccounts = [];
-        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-            $staffAccounts[] = $row;
-        }
-        return $staffAccounts;
+// Removed duplicate getAllStaff method
+
+public function getAllStaff($searchTerm = '', $limit = null, $offset = null) {
+    $sql = "SELECT * FROM customer WHERE role = 'staff'";
+    if ($searchTerm) {
+        $sql .= " AND (first_name LIKE :search OR last_name LIKE :search OR email LIKE :search)";
+    }
+    if ($limit !== null) {
+        $sql .= " LIMIT :limit OFFSET :offset";
     }
     
-    return [];
+    $stmt = $this->db->connect()->prepare($sql);
+    
+    if ($searchTerm) {
+        $searchTerm = "%$searchTerm%";
+        $stmt->bindValue(':search', $searchTerm, PDO::PARAM_STR);
+    }
+    if ($limit !== null) {
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    }
+    
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function getTotalStaffCount($searchTerm = '') {
+    $sql = "SELECT COUNT(*) FROM customer WHERE role = 'staff'";
+    if ($searchTerm) {
+        $sql .= " AND (first_name LIKE :search OR last_name LIKE :search OR email LIKE :search)";
+    }
+    
+    $stmt = $this->db->connect()->prepare($sql);
+    
+    if ($searchTerm) {
+        $searchTerm = "%$searchTerm%";
+        $stmt->bindValue(':search', $searchTerm, PDO::PARAM_STR);
+    }
+    
+    $stmt->execute();
+    return $stmt->fetchColumn();
 }
 }
