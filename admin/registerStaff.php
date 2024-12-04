@@ -133,7 +133,7 @@ function getFullName() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Management</title>
-    <link rel="stylesheet" href="adminStyle.css">
+    <?php include_once 'includes/header.php'; ?>
     <style>
         .table-controls {
             display: flex;
@@ -182,27 +182,27 @@ function getFullName() {
         <p class="header-p">IBT TICKETING SYSTEM</p>
     </header>
     <section class="sidebar">
-    <div class="admin-name">Admin: <?php echo getFullName()?></div>
-    <hr class="menu-itemHR">
-    <ul>
-        <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
-        <li><a href="bus.php" class="menu-item">Bus</a></li>
-        <li><a href="route.php" class="menu-item">Route</a></li>
-        <li><a href="customer.php" class="menu-item">Customer</a></li>
-        <li><a href="booking.php" class="menu-item">Bookings</a></li>
-        
-        <?php 
-        // Only show Staff Management for admin users
-        if (isset($_SESSION['customer']) && 
-            ($_SESSION['customer']['role'] === 'admin' || 
-             $_SESSION['customer']['isAdmin'] == 1)) : ?>
-            <li><a href="registerStaff.php" class="menu-item active-link">Staff Management</a></li>
-        <?php endif; ?>
-        
+        <div class="admin-name">Admin: <?php echo getFullName()?></div>
         <hr class="menu-itemHR">
-        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-    </ul>
-</section>
+        <ul>
+            <li><a href="dashboard.php" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="bus.php" class="menu-item"><i class="fas fa-bus"></i> Bus</a></li>
+            <li><a href="route.php" class="menu-item"><i class="fas fa-route"></i> Route</a></li>
+            <li><a href="customer.php" class="menu-item"><i class="fas fa-users"></i> Customer</a></li>
+            <li><a href="booking.php" class="menu-item"><i class="fas fa-ticket-alt"></i> Bookings</a></li>
+            
+            <?php 
+            // Only show Staff Management for admin users
+            if (isset($_SESSION['customer']) && 
+                ($_SESSION['customer']['role'] === 'admin' || 
+                 $_SESSION['customer']['isAdmin'] == 1)) : ?>
+                <li><a href="registerStaff.php" class="menu-item active_link"><i class="fas fa-user-cog"></i> Staff Management</a></li>
+            <?php endif; ?>
+            
+            <hr class="menu-itemHR">
+            <li><a href="../logout.php" class="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </section>
     <main class="main">
         <div id="main-content">
             <h1>Staff Management</h1>
@@ -310,7 +310,7 @@ function getFullName() {
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="6">No staff accounts found.</td>
+                                <td colspan="6" style="text-align: center;">No staff accounts found.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

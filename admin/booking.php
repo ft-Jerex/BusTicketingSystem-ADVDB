@@ -35,7 +35,8 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
 
     public function getCustomerDetails($customer_id)
     {
-        $sql = "SELECT CONCAT(first_name, ' ', last_name) AS full_name, contact_no FROM customer WHERE customer_id = ?";
+        $sql = "SELECT customer_id, CONCAT(first_name, ' ', last_name) AS full_name, contact_no 
+                FROM customer WHERE customer_id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$customer_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -145,26 +146,117 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
         $stmt->execute();
         return $stmt->fetchColumn();
     }
+    
 }
 
 $bookingSystem = new BookingSystem();
 
 // Handle form submissions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // ... [Previous POST handling code remains unchanged] ...
+    // Sanitize and validate input
+    $action = isset($_POST['action']) ? clean_input($_POST['action']) : '';
+    $customer_id = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
+    $route_id = isset($_POST['route_id']) ? (int)$_POST['route_id'] : 0;
+    $date_book = isset($_POST['date_book']) ? clean_input($_POST['date_book']) : '';
+    $seat_taken = isset($_POST['seat_taken']) ? (int)$_POST['seat_taken'] : null;
+    $booking_id = isset($_POST['booking_id']) ? (int)$_POST['booking_id'] : 0;
+
+    // Validation checks
+    $errors = [];
+
+    if (!$customer_id) {
+        $errors[] = "Customer ID is required.";
+    }
+
+    if (!$route_id) {
+        $errors[] = "Route selection is required.";
+    }
+
+    if (!$date_book) {
+        $errors[] = "Booking date is required.";
+    }
+
+    if ($seat_taken === null) {
+        $errors[] = "Seat selection is required.";
+    }
+
+    // Get route details to fetch bus_id
+    $sql = "SELECT fk_bus_id AS bus_id FROM route WHERE route_id = ?";
+    $stmt = $bookingSystem->connect()->prepare($sql);
+    $stmt->execute([$route_id]);
+    $routeDetails = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$routeDetails) {
+        $errors[] = "Invalid route selected.";
+    }
+
+    // Check if seat is already booked
+    $occupiedSeats = $bookingSystem->getOccupiedSeats($route_id, $date_book);
+    if (in_array($seat_taken, $occupiedSeats)) {
+        $errors[] = "Selected seat is already booked.";
+    }
+
+    // Process action based on validation
+    if (empty($errors)) {
+        try {
+            switch ($action) {
+                case 'add':
+                    $result = $bookingSystem->addBooking(
+                        $customer_id, 
+                        $routeDetails['bus_id'], 
+                        $route_id, 
+                        $seat_taken, 
+                        $date_book
+                    );
+                    $_SESSION['message'] = $result ? "Booking added successfully." : "Failed to add booking.";
+                    break;
+
+                case 'edit':
+                    $result = $bookingSystem->updateBooking(
+                        $booking_id,
+                        $routeDetails['bus_id'], 
+                        $route_id, 
+                        $seat_taken, 
+                        $date_book
+                    );
+                    $_SESSION['message'] = $result ? "Booking updated successfully." : "Failed to update booking.";
+                    break;
+
+                case 'delete':
+                    $result = $bookingSystem->deleteBooking($booking_id);
+                    $_SESSION['message'] = $result ? "Booking deleted successfully." : "Failed to delete booking.";
+                    break;
+
+                default:
+                    $_SESSION['error'] = "Invalid action specified.";
+            }
+        } catch (PDOException $e) {
+            $_SESSION['error'] = "Database error: " . $e->getMessage();
+        }
+    } else {
+        $_SESSION['error'] = implode(', ', $errors);
+    }
+
+    // Redirect to prevent form resubmission
+    header('Location: booking.php');
+    exit();
 }
 
-// Get total results and calculate total pages
+// Fetch route details
+$routes = $bookingSystem->getRouteDetails();
+
+// Fetch existing bookings (similar to previous implementation)
+$searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
+$resultsPerPage = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $totalResults = $bookingSystem->getTotalBookings($searchTerm);
 $totalPages = ceil($totalResults / $resultsPerPage);
-
-// Adjust page number if it's out of bounds
 $page = max(1, min($page, $totalPages));
 $offset = ($page - 1) * $resultsPerPage;
 
-$routes = $bookingSystem->getRouteDetails();
 $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPerPage, $offset);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -172,129 +264,79 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
 <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Management</title>
-    <link rel="stylesheet" href="./adminStyle.css">
-    <style>
-        .table-controls {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .pagination a {
-            margin: 0 5px;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: black;
-        }
-        .pagination a.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .form-controls {
-            background-color: transparent;
-            box-shadow: none;
-            padding: 0px;
-        }
-        .form-controls input {
-            width: 300px;
-        }
-        .form-controls .search-Btn, .form-controls .refresh-Btn {
-            height: 40px;   
-            padding: 10px;
-            font-size: 16px;
-            color: #000000;
-            background-color: #D3D3D3;
-            border: none;
-            border-radius: 5px;
-        }
-    </style>
+    <?php include_once 'includes/header.php'; ?>
 </head>
 <body>
 <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
     </header>
     <section class="sidebar">
-    <div class="admin-name">Admin: <?php echo getFullName()?></div>
-    <hr class="menu-itemHR">
-    <ul>
-        <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
-        <li><a href="bus.php" class="menu-item">Bus</a></li>
-        <li><a href="route.php" class="menu-item">Route</a></li>
-        <li><a href="customer.php" class="menu-item">Customer</a></li>
-        <li><a class="active_link" href="booking.php" class="menu-item">Bookings</a></li>
-        
-        <?php 
-        // Only show Staff Management for admin users
-        if (isset($_SESSION['customer']) && 
-            ($_SESSION['customer']['role'] === 'admin' || 
-             $_SESSION['customer']['isAdmin'] == 1)) : ?>
-            <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
-        <?php endif; ?>
-        
+        <div class="admin-name">Admin: <?php echo getFullName()?></div>
         <hr class="menu-itemHR">
-        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-    </ul>
-</section>
+        <ul>
+            <li><a href="dashboard.php" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="bus.php" class="menu-item"><i class="fas fa-bus"></i> Bus</a></li>
+            <li><a href="route.php" class="menu-item"><i class="fas fa-route"></i> Route</a></li>
+            <li><a href="customer.php" class="menu-item"><i class="fas fa-users"></i> Customer</a></li>
+            <li><a class="active_link" href="booking.php" class="menu-item"><i class="fas fa-ticket-alt"></i> Bookings</a></li>
+            
+            <?php 
+            // Only show Staff Management for admin users
+            if (isset($_SESSION['customer']) && 
+                ($_SESSION['customer']['role'] === 'admin' || 
+                 $_SESSION['customer']['isAdmin'] == 1)) : ?>
+                <li><a href="registerStaff.php" class="menu-item"><i class="fas fa-user-cog"></i> Staff Management</a></li>
+            <?php endif; ?>
+            
+            <hr class="menu-itemHR">
+            <li><a href="../logout.php" class="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </section>
     
     <main class="main">
         <div id="main-content">
             <h1>Booking Management</h1>
+            <!-- Booking Form -->
             <div class="AddEdit">
-        <form method="post" action="">
-            <input type="hidden" name="action" id="action" value="add">
-            <input type="hidden" name="booking_id" id="booking_id">
-            <input type="hidden" name="bus_id" id="bus_id">
+                <form method="post" action="booking.php">
+                    <input type="hidden" name="action" id="action" value="add">
+                    <input type="hidden" name="booking_id" id="booking_id">
+                    <input type="hidden" name="bus_id" id="bus_id">
 
-            <label for="customer_id">Customer ID:</label>
-            <input type="number" name="customer_id" id="customer_id" required><br>
+                    <label for="customer_id">Customer ID:</label>
+                    <input type="number" name="customer_id" id="customer_id" required><br>
 
-            <label for="full_name">Full Name:</label>
-            <input type="text" id="full_name" readonly><br>
+                    <label for="full_name">Full Name:</label>
+                    <input type="text" id="full_name" readonly><br>
 
-            <label for="contact_no">Contact No:</label>
-            <input type="text" id="contact_no" readonly><br>
+                    <label for="contact_no">Contact No:</label>
+                    <input type="text" id="contact_no" readonly><br>
 
-            <label for="route_id">Route:</label>
-            <select name="route_id" id="route_id" required>
-                <option value="">Select a route</option>
-                <?php foreach ($routes as $route): ?>
-                    <option value="<?= $route['route_id'] ?>" 
-                            data-cost="<?= $route['cost'] ?>" 
-                            data-seats="<?= $route['bus_seat'] ?>" 
-                            data-bus-id="<?= $route['bus_id'] ?>" 
-                            data-departure-time="<?= $route['departure_time'] ?>">
-                        <?= $route['route_name'] ?> - <?= $route['bus_no'] ?>
-                    </option>
-                <?php endforeach; ?>
-            </select><br>
+                    <label for="route_id">Route:</label>
+                    <select name="route_id" id="route_id" required>
+                        <option value="">Select a route</option>
+                        <?php foreach ($routes as $route): ?>
+                            <option value="<?= $route['route_id'] ?>" 
+                                    data-cost="<?= $route['cost'] ?>" 
+                                    data-seats="<?= $route['bus_seat'] ?>" 
+                                    data-bus-id="<?= $route['bus_id'] ?>" 
+                                    data-departure-time="<?= $route['departure_time'] ?>">
+                                <?= $route['route_name'] ?> - <?= $route['bus_no'] ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select><br>
 
-    <label for="cost">Cost:</label>
-    <input type="text" id="cost" readonly><br>
+                    <label for="date_book">Booking Date:</label>
+                    <input type="date" name="date_book" id="date_book" required><br>
 
-    <label for="seats">Number of Seats:</label>
-    <input type="text" id="seats" readonly><br>
+                    <section class="seat">
+                        <label>Select Seat:</label>
+                        <div id="seat_grid"></div>
+                    </section>
 
-    <label for="departure_time">Departure Time:</label>
-    <input type="text" id="departure_time" readonly><br>
-
-    <label for="date_book">Booking Date:</label>
-    <input type="date" name="date_book" id="date_book" required><br>
-
-    <input type="submit" value="Submit">
-</form>
-
-<section class="seat">
-    <label>Select Seat:</label>
-    <div id="seat_grid"></div>
-</section>
-    </div>
+                    <input type="submit" value="Submit Booking">
+                </form>
+            </div>
 
             <h2>Existing Bookings</h2>
 <!-- Add the search and refresh controls -->
@@ -329,7 +371,7 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
             <td><?= $booking['date_book'] ?></td>
             <td>
                 <button class="editBtn" onclick='editBooking(<?= json_encode($booking) ?>)'>Edit</button>
-                <button class="deleteBtn" onclick='deleteBooking(<?= $booking['booking_id'] ?>)'>Delete</button>
+                <button class="deleteBtn" onclick="deleteBooking(<?= $booking['booking_id'] ?>)">Delete</button>
             </td>
         </tr>
     <?php endforeach; ?>
@@ -361,13 +403,11 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         const fullNameInput = document.getElementById('full_name');
         const contactNoInput = document.getElementById('contact_no');
         const routeSelect = document.getElementById('route_id');
-        const costInput = document.getElementById('cost');
-        const seatsInput = document.getElementById('seats');
-        const departureTimeInput = document.getElementById('departure_time');
         const dateBookInput = document.getElementById('date_book');
         const seatGrid = document.getElementById('seat_grid');
         const busIdInput = document.getElementById('bus_id');
 
+        // Fetch customer details when customer ID changes
         customerIdInput.addEventListener('change', function() {
             fetch(`get_customer_details.php?customer_id=${this.value}`)
                 .then(response => response.json())
@@ -377,21 +417,20 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
                 });
         });
 
+        // Update route details and seat grid when route is selected
         routeSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
-            costInput.value = selectedOption.dataset.cost;
-            seatsInput.value = selectedOption.dataset.seats;
-            departureTimeInput.value = selectedOption.dataset.departureTime;
             busIdInput.value = selectedOption.dataset.busId;
             updateSeatGrid();
         });
 
+        // Update seat grid when booking date changes
         dateBookInput.addEventListener('change', updateSeatGrid);
 
         function updateSeatGrid() {
             const routeId = routeSelect.value;
             const dateBook = dateBookInput.value;
-            const totalSeats = parseInt(seatsInput.value);
+            const totalSeats = parseInt(routeSelect.selectedOptions[0].dataset.seats);
 
             if (routeId && dateBook && totalSeats) {
                 fetch(`get_occupied_seats.php?route_id=${routeId}&date_book=${dateBook}`)
@@ -404,12 +443,31 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
                             input.name = 'seat_taken';
                             input.value = i;
                             input.id = `seat_${i}`;
-                            if (occupiedSeats.includes(i)) {
-                                input.disabled = true;
-                            }
+                            
                             const label = document.createElement('label');
                             label.htmlFor = `seat_${i}`;
                             label.textContent = i;
+
+                            // Mark occupied seats
+                            if (occupiedSeats.includes(i)) {
+                                label.classList.add('occupied');
+                                input.disabled = true;
+                            }
+
+                            // Add click event to handle seat selection
+                            label.addEventListener('click', function() {
+                                if (!input.disabled) {
+                                    // Remove previous selections
+                                    seatGrid.querySelectorAll('label').forEach(l => {
+                                        l.classList.remove('selected');
+                                    });
+                                    
+                                    // Mark current seat as selected
+                                    label.classList.add('selected');
+                                    input.checked = true;
+                                }
+                            });
+
                             seatGrid.appendChild(input);
                             seatGrid.appendChild(label);
                         }
@@ -420,32 +478,28 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         // Set minimum date for booking
         const today = new Date();
         const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);a
+        tomorrow.setDate(tomorrow.getDate() + 1);
         dateBookInput.min = tomorrow.toISOString().split('T')[0];
     });
-
     function editBooking(booking) {
         document.getElementById('action').value = 'edit';
         document.getElementById('booking_id').value = booking.booking_id;
         document.getElementById('customer_id').value = booking.customer_id;
         document.getElementById('full_name').value = booking.full_name;
         document.getElementById('contact_no').value = booking.contact_no;
-        document.getElementById('route_id').value = booking.route_name + ' - ' + booking.bus_no;
+        document.getElementById('route_id').value = booking.route_id;
         document.getElementById('date_book').value = booking.date_book;
+        document.getElementById('bus_id').value = booking.bus_id;
         updateSeatGrid();
-        document.querySelector(`input[name="seat_taken"][value="${booking.seat_taken}"]`).checked = true;
     }
 
-    function deleteBooking(bookingId) {
+    function deleteBooking(booking_id) {
         if (confirm('Are you sure you want to delete this booking?')) {
             document.getElementById('action').value = 'delete';
-            document.getElementById('booking_id').value = bookingId;
-            document.querySelector('form').submit();
+            document.getElementById('booking_id').value = booking_id;
+            document.forms[0].submit();
         }
     }
-</script>
-        </div>
-    </main>
-    
+    </script>
 </body>
 </html>

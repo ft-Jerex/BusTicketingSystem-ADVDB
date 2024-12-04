@@ -5,11 +5,11 @@ $conn = $db->connect();
 
 session_start();
 
-        if (!isset($_SESSION['customer'])) {
-            header('Location: ../login.php');
-            exit();
-        }
-        
+if (!isset($_SESSION['customer'])) {
+    header('Location: ../login.php');
+    exit();
+}
+
 function getFullName() {
     if (isset($_SESSION['customer'])) {
         return $_SESSION['customer']['first_name'] . ' ' . $_SESSION['customer']['last_name'];
@@ -19,21 +19,38 @@ function getFullName() {
 
 function getCount($conn, $table) {
     $sql = "SELECT COUNT(*) as count FROM `$table`";
-    echo "Executing query: $sql<br>";  // Debug output
     try {
         $stmt = $conn->prepare($sql);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($result) {
-            echo "Count for $table: " . $result['count'] . "<br>";  // Debug output
-            return $result['count'];
-        } else {
-            echo "No rows found for $table<br>";  // Debug output
-            return 0;
-        }
+        return $result ? $result['count'] : 0;
     } catch (PDOException $e) {
-        echo "Query failed: " . $e->getMessage() . "<br>";  // Debug output
         return 0;
+    }
+}
+
+function getWeeklyRevenue($conn) {
+    $sql = "SELECT 
+                DAYNAME(booking.date_book) AS day_name,
+                SUM(route.cost) AS total_revenue
+            FROM 
+                booking
+            JOIN 
+                route ON booking.fk_route_id = route.route_id
+            WHERE 
+                booking.date_book >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+                AND booking.date_book < DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY)
+            GROUP BY 
+                day_name
+            ORDER BY 
+                FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
+    
+    try {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
     }
 }
 
@@ -42,14 +59,14 @@ $routeCount = getCount($conn, "route");
 $customerCount = getCount($conn, "customer");
 $bookingCount = getCount($conn, "booking");
 
-// Array of items to display
+$weeklyRevenue = getWeeklyRevenue($conn);
+
 $items = [
     "Bus" => $busCount,
     "Route" => $routeCount,
     "Customer" => $customerCount,
     "Bookings" => $bookingCount
 ];
-
 ?>
 
 <!DOCTYPE html>
@@ -58,27 +75,11 @@ $items = [
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link rel="stylesheet" href="adminStyle.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
-    <style>
-        .dash {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .dash-count {
-            font-size: 2em;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-    </style>
+    <?php include_once 'includes/header.php'; ?>
 </head>  
 <body>
     <header class="header">
         <p class="header-p">IBT TICKETING SYSTEM</p>
-
     </header>
     <section class="sidebar">
         <div class="admin-name">Admin: <?php echo getFullName()?></div>
@@ -105,15 +106,56 @@ $items = [
     <main class="main">
         <div id="main-content" class="main-content">
             <h1>Welcome to the Dashboard</h1>
-        <div class="dashboard-box">
-            <?php foreach ($items as $name => $count): ?>
-                <div class="dash">
-                    <span><?php echo $name; ?></span>
-                    <span class="dash-count"><?php echo $count; ?></span>
-                </div>
-            <?php endforeach; ?>
-        </div>
+            <div class="dashboard-box">
+                <?php foreach ($items as $name => $count): ?>
+                    <div class="dash">
+                        <span><?php echo $name; ?></span>
+                        <span class="dash-count"><?php echo $count; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="revenue-chart-container">
+                <h2>Weekly Revenue</h2>
+                <canvas id="weeklyRevenueChart"></canvas>
+            </div>
         </div>
     </main>
+    <?php include_once 'includes/footer.php'; ?>
+    <script>  
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('weeklyRevenueChart').getContext('2d');
+            var weeklyRevenueData = <?php echo json_encode($weeklyRevenue); ?>;
+
+            var labels = weeklyRevenueData.map(item => item.day_name);
+            var revenues = weeklyRevenueData.map(item => parseFloat(item.total_revenue));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: revenues,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Revenue (PHP)'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

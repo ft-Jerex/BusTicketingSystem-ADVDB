@@ -72,6 +72,7 @@ body {
 }
 .sidebar a {
   padding: 10px 0;
+  gap: 10px;
 
   border-radius: 0 10px 10px 0;
   margin: 10px;
@@ -85,10 +86,11 @@ body {
   overflow: hidden;
   transition: transform 0.4s ease;
 }
-.menu-item,
-.active_link {
+/* .menu-item,
+.active_link,
+.logoutBtn {
   gap: 10px;
-}
+} */
 .menu-itemHR {
   width: 90%;
   margin: auto;
@@ -122,8 +124,9 @@ a {
 
 .dash {
   display: flex;
-  height: 250px;
-  width: 400px;
+  flex-direction: column;
+  height: 150px;
+  width: 200px;
   font-size: 24px;
   background-color: #ffff;
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
@@ -138,6 +141,13 @@ a {
   flex-wrap: wrap;
   gap: 20px;
   justify-content: space-evenly;
+  margin-bottom: 20px;
+}
+
+.dash-count {
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 10px;
 }
 
 /*TABLE DESIGN*/
@@ -344,42 +354,47 @@ tbody tr:hover {
 .delete-btn:hover {
   background-color: #c82333;
 }
-
-/* .pagination {
+.table-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.pagination {
   display: flex;
   justify-content: center;
   margin-top: 20px;
 }
-.pagination a,
-.pagination span {
+.pagination a {
   margin: 0 5px;
   padding: 5px 10px;
   border: 1px solid #ddd;
   text-decoration: none;
   color: black;
 }
-.pagination .current {
-  background-color: #007bff;
+.pagination a.active {
+  background-color: #4caf50;
   color: white;
 }
-.search-container {
-  display: flex;
-  justify-content: center;
+.form-controls {
   background-color: transparent;
   box-shadow: none;
-  border: none;
+  padding: 0px;
 }
-.search-container input {
-  padding: 5px;
-}
-.search-btn {
-  width: 100px;
-  height: 30px;
-}
-.search-input {
+.form-controls input {
   width: 300px;
-  height: 30px;
-} */
+}
+.form-controls .search-Btn,
+.form-controls .refresh-Btn {
+  height: 40px;
+  padding: 10px;
+  font-size: 16px;
+  color: #000000;
+  background-color: #d3d3d3;
+  border: none;
+  border-radius: 5px;
+}
 
 /* Responsive styling */
 @media (max-width: 600px) {

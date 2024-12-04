@@ -82,6 +82,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 // Handle Delete
 if (isset($_GET['delete'])) {
     $id = clean_input($_GET['delete']);
+    
+    // First, delete related records in the route table
+    $deleteRouteSql = "DELETE FROM route WHERE fk_bus_id=?";
+    $routeStmt = $conn->prepare($deleteRouteSql);
+    $routeStmt->execute([$id]);
+    
+    // Then, delete the bus record
     $sql = "DELETE FROM bus WHERE bus_id=?";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$id]);
@@ -130,79 +137,34 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Management</title>
-    <link rel="stylesheet" href="./adminStyle.css">
-    <style>
-        .table-controls {
-
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .pagination a {
-            margin: 0 5px;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: black;
-        }
-        .pagination a.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .form-controls {
-            background-color: transparent;
-            box-shadow: none;
-            padding: 0px;
-        }
-        .form-controls input{
-            width: 300px;
-
-        }
-        .form-controls .search-Btn, .form-controls .refresh-Btn {
-            height: 40px;   
-            padding: 10px;
-            font-size: 16px;
-            color: #000000;
-            background-color: #D3D3D3;
-            border:none;
-            border-radius: 5px;
-        }
-    </style>
+    <?php include_once 'includes/header.php'; ?>
 </head>
 <body>
 <header class="header">
     <p class="header-p">IBT TICKETING SYSTEM</p>
 </header>
 <section class="sidebar">
-    <div class="admin-name">Admin: <?php echo getFullName()?></div>
-    <hr class="menu-itemHR">
-    <ul>
-        <li><a href="dashboard.php" class="menu-item">Dashboard</a></li>
-        <li><a class="active_link" href="bus.php" class="menu-item">Bus</a></li>
-        <li><a href="route.php" class="menu-item">Route</a></li>
-        <li><a href="customer.php" class="menu-item">Customer</a></li>
-        <li><a href="booking.php" class="menu-item">Bookings</a></li>
-        
-        <?php 
-        // Only show Staff Management for admin users
-        if (isset($_SESSION['customer']) && 
-            ($_SESSION['customer']['role'] === 'admin' || 
-             $_SESSION['customer']['isAdmin'] == 1)) : ?>
-            <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
-        <?php endif; ?>
-        
+        <div class="admin-name">Admin: <?php echo getFullName()?></div>
         <hr class="menu-itemHR">
-        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-    </ul>
-</section>
+        <ul>
+            <li><a href="dashboard.php" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a class="active_link" href="bus.php" class="menu-item"><i class="fas fa-bus"></i> Bus</a></li>
+            <li><a href="route.php" class="menu-item"><i class="fas fa-route"></i> Route</a></li>
+            <li><a href="customer.php" class="menu-item"><i class="fas fa-users"></i> Customer</a></li>
+            <li><a href="booking.php" class="menu-item"><i class="fas fa-ticket-alt"></i> Bookings</a></li>
+            
+            <?php 
+            // Only show Staff Management for admin users
+            if (isset($_SESSION['customer']) && 
+                ($_SESSION['customer']['role'] === 'admin' || 
+                 $_SESSION['customer']['isAdmin'] == 1)) : ?>
+                <li><a href="registerStaff.php" class="menu-item"><i class="fas fa-user-cog"></i> Staff Management</a></li>
+            <?php endif; ?>
+            
+            <hr class="menu-itemHR">
+            <li><a href="../logout.php" class="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </section>
 <main class="main">
     <div id="main-content">
         <h1>Bus Management</h1>
