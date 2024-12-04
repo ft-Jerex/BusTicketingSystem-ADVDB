@@ -85,7 +85,10 @@ body {
   overflow: hidden;
   transition: transform 0.4s ease;
 }
-
+.menu-item,
+.active_link {
+  gap: 10px;
+}
 .menu-itemHR {
   width: 90%;
   margin: auto;
@@ -119,20 +122,22 @@ a {
 
 .dash {
   display: flex;
-  height: 150px;
-  width: 300px;
-  font-size: 20px;
-
+  height: 250px;
+  width: 400px;
+  font-size: 24px;
   background-color: #ffff;
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
   margin: 10px 0;
-
   border-radius: 10px;
+  justify-content: center;
+  align-items: center;
 }
+
 .dashboard-box {
   display: flex;
-  justify-content: space-evenly;
   flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-evenly;
 }
 
 /*TABLE DESIGN*/
@@ -158,6 +163,11 @@ h1,
 h2 {
   color: #333;
   text-align: center;
+}
+
+h1 {
+  font-size: 2.25em;
+  margin-bottom: 20px;
 }
 
 form,
@@ -239,7 +249,7 @@ input[type="date"],
 input[type="time"],
 input[type="password"],
 input[type="tel"],
-input select {
+select {
   width: 100%;
   padding: 10px;
   margin-bottom: 20px;

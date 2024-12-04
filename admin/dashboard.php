@@ -5,11 +5,6 @@ $conn = $db->connect();
 
 session_start();
 
-
-// if (!isset($_SESSION['customer']) || !$_SESSION['customer']['isAdmin'] || !$_SESSION['customer']['isStaff']) {
-//     header('Location: login.php');
-//     exit();
-// }
         if (!isset($_SESSION['customer'])) {
             header('Location: ../login.php');
             exit();
@@ -63,7 +58,8 @@ $items = [
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link rel="stylesheet" href="./adminStyle.css">
+    <link rel="stylesheet" href="adminStyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
     <style>
         .dash {
             display: flex;
@@ -85,27 +81,27 @@ $items = [
 
     </header>
     <section class="sidebar">
-    <div class="admin-name">Admin: <?php echo getFullName()?></div>
-    <hr class="menu-itemHR">
-    <ul>
-        <li><a class="active_link" href="dashboard.php" class="menu-item">Dashboard</a></li>
-        <li><a href="bus.php" class="menu-item">Bus</a></li>
-        <li><a href="route.php" class="menu-item">Route</a></li>
-        <li><a href="customer.php" class="menu-item">Customer</a></li>
-        <li><a href="booking.php" class="menu-item">Bookings</a></li>
-        
-        <?php 
-        // Only show Staff Management for admin users
-        if (isset($_SESSION['customer']) && 
-            ($_SESSION['customer']['role'] === 'admin' || 
-             $_SESSION['customer']['isAdmin'] == 1)) : ?>
-            <li><a href="registerStaff.php" class="menu-item">Staff Management</a></li>
-        <?php endif; ?>
-        
+        <div class="admin-name">Admin: <?php echo getFullName()?></div>
         <hr class="menu-itemHR">
-        <li><a href="../logout.php" class="logoutBtn">Logout</a></li>
-    </ul>
-</section>
+        <ul>
+            <li><a class="active_link" href="dashboard.php" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="bus.php" class="menu-item"><i class="fas fa-bus"></i> Bus</a></li>
+            <li><a href="route.php" class="menu-item"><i class="fas fa-route"></i> Route</a></li>
+            <li><a href="customer.php" class="menu-item"><i class="fas fa-users"></i> Customer</a></li>
+            <li><a href="booking.php" class="menu-item"><i class="fas fa-ticket-alt"></i> Bookings</a></li>
+            
+            <?php 
+            // Only show Staff Management for admin users
+            if (isset($_SESSION['customer']) && 
+                ($_SESSION['customer']['role'] === 'admin' || 
+                 $_SESSION['customer']['isAdmin'] == 1)) : ?>
+                <li><a href="registerStaff.php" class="menu-item"><i class="fas fa-user-cog"></i> Staff Management</a></li>
+            <?php endif; ?>
+            
+            <hr class="menu-itemHR">
+            <li><a href="../logout.php" class="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </section>
     <main class="main">
         <div id="main-content" class="main-content">
             <h1>Welcome to the Dashboard</h1>
