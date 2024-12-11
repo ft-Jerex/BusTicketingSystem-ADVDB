@@ -18,7 +18,11 @@ function getFullName() {
 }
 
 function getCount($conn, $table) {
-    $sql = "SELECT COUNT(*) as count FROM `$table`";
+    if ($table === "customer") {
+        $sql = "SELECT COUNT(*) as count FROM `customer` WHERE role = 'customer' AND isCustomer = 1";
+    } else {
+        $sql = "SELECT COUNT(*) as count FROM `$table`";
+    }
     try {
         $stmt = $conn->prepare($sql);
         $stmt->execute();

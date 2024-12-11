@@ -22,6 +22,7 @@ $offset = ($page - 1) * $resultsPerPage;
 
 // Search functionality
 $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
+$searchDate = isset($_GET['date']) ? clean_input($_GET['date']) : '';
 
 
     class BookingSystem extends Database
@@ -86,21 +87,32 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
         return $stmt->rowCount() > 0;
     }
 
-    public function getExistingBookings($searchTerm = '', $limit = null, $offset = null)
+    public function getExistingBookings($searchTerm = '', $searchDate = '', $limit = null, $offset = null)
     {
         $sql = "SELECT b.booking_id, c.customer_id, CONCAT(c.first_name, ' ', c.last_name) AS full_name, 
-                c.contact_no, r.route_name, bu.bus_no, b.seat_taken, b.date_book 
+                c.contact_no, r.route_name, bu.bus_no, b.seat_taken, b.date_book, r.route_id, bu.bus_id 
                 FROM booking b 
                 JOIN customer c ON b.fk_customer_id = c.customer_id 
                 JOIN route r ON b.fk_route_id = r.route_id 
                 JOIN bus bu ON b.fk_bus_id = bu.bus_id";
         
+        $conditions = [];
         if ($searchTerm) {
-            $sql .= " WHERE CONCAT(c.first_name, ' ', c.last_name) LIKE :search 
-                      OR c.contact_no LIKE :search 
-                      OR r.route_name LIKE :search 
-                      OR bu.bus_no LIKE :search";
+            $conditions[] = "(CONCAT(c.first_name, ' ', c.last_name) LIKE :search 
+                           OR c.contact_no LIKE :search 
+                           OR r.route_name LIKE :search 
+                           OR bu.bus_no LIKE :search)";
         }
+        if ($searchDate) {
+            $conditions[] = "b.date_book = :date";
+        }
+        
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+        
+        // Add ORDER BY clause for descending booking_id
+        $sql .= " ORDER BY b.booking_id DESC";
         
         if ($limit !== null && $offset !== null) {
             $sql .= " LIMIT :limit OFFSET :offset";
@@ -112,6 +124,9 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
             $searchTerm = "%$searchTerm%";
             $stmt->bindParam(':search', $searchTerm);
         }
+        if ($searchDate) {
+            $stmt->bindParam(':date', $searchDate);
+        }
         
         if ($limit !== null && $offset !== null) {
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -122,18 +137,26 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getTotalBookings($searchTerm = '')
+    public function getTotalBookings($searchTerm = '', $searchDate = '')
     {
         $sql = "SELECT COUNT(*) FROM booking b 
                 JOIN customer c ON b.fk_customer_id = c.customer_id 
                 JOIN route r ON b.fk_route_id = r.route_id 
                 JOIN bus bu ON b.fk_bus_id = bu.bus_id";
         
+        $conditions = [];
         if ($searchTerm) {
-            $sql .= " WHERE CONCAT(c.first_name, ' ', c.last_name) LIKE :search 
-                      OR c.contact_no LIKE :search 
-                      OR r.route_name LIKE :search 
-                      OR bu.bus_no LIKE :search";
+            $conditions[] = "(CONCAT(c.first_name, ' ', c.last_name) LIKE :search 
+                           OR c.contact_no LIKE :search 
+                           OR r.route_name LIKE :search 
+                           OR bu.bus_no LIKE :search)";
+        }
+        if ($searchDate) {
+            $conditions[] = "b.date_book = :date";
+        }
+        
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
         $stmt = $this->db->prepare($sql);
@@ -141,6 +164,9 @@ $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
         if ($searchTerm) {
             $searchTerm = "%$searchTerm%";
             $stmt->bindParam(':search', $searchTerm);
+        }
+        if ($searchDate) {
+            $stmt->bindParam(':date', $searchDate);
         }
         
         $stmt->execute();
@@ -164,36 +190,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validation checks
     $errors = [];
 
-    if (!$customer_id) {
-        $errors[] = "Customer ID is required.";
-    }
+    if ($action != 'delete') {
+        if (!$customer_id) {
+            $errors[] = "Customer ID is required.";
+        }
 
-    if (!$route_id) {
-        $errors[] = "Route selection is required.";
-    }
+        if (!$route_id) {
+            $errors[] = "Route selection is required.";
+        }
 
-    if (!$date_book) {
-        $errors[] = "Booking date is required.";
-    }
+        if (!$date_book) {
+            $errors[] = "Booking date is required.";
+        }
 
-    if ($seat_taken === null) {
-        $errors[] = "Seat selection is required.";
-    }
+        if ($seat_taken === null) {
+            $errors[] = "Seat selection is required.";
+        }
 
-    // Get route details to fetch bus_id
-    $sql = "SELECT fk_bus_id AS bus_id FROM route WHERE route_id = ?";
-    $stmt = $bookingSystem->connect()->prepare($sql);
-    $stmt->execute([$route_id]);
-    $routeDetails = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Get route details to fetch bus_id
+        $sql = "SELECT fk_bus_id AS bus_id FROM route WHERE route_id = ?";
+        $stmt = $bookingSystem->connect()->prepare($sql);
+        $stmt->execute([$route_id]);
+        $routeDetails = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$routeDetails) {
-        $errors[] = "Invalid route selected.";
-    }
+        if (!$routeDetails) {
+            $errors[] = "Invalid route selected.";
+        }
 
-    // Check if seat is already booked
-    $occupiedSeats = $bookingSystem->getOccupiedSeats($route_id, $date_book);
-    if (in_array($seat_taken, $occupiedSeats)) {
-        $errors[] = "Selected seat is already booked.";
+        // Check if seat is already booked (except for the current booking when editing)
+        $occupiedSeats = $bookingSystem->getOccupiedSeats($route_id, $date_book);
+        if ($action == 'edit') {
+            $occupiedSeats = array_filter($occupiedSeats, function($seat) use ($booking_id) {
+                return $seat != $booking_id;
+            });
+        }
+        if (in_array($seat_taken, $occupiedSeats)) {
+            $errors[] = "Selected seat is already booked.";
+        }
     }
 
     // Process action based on validation
@@ -247,14 +280,15 @@ $routes = $bookingSystem->getRouteDetails();
 
 // Fetch existing bookings (similar to previous implementation)
 $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
+$searchDate = isset($_GET['date']) ? clean_input($_GET['date']) : '';
 $resultsPerPage = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$totalResults = $bookingSystem->getTotalBookings($searchTerm);
+$totalResults = $bookingSystem->getTotalBookings($searchTerm, $searchDate);
 $totalPages = ceil($totalResults / $resultsPerPage);
 $page = max(1, min($page, $totalPages));
 $offset = ($page - 1) * $resultsPerPage;
 
-$existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPerPage, $offset);
+$existingBookings = $bookingSystem->getExistingBookings($searchTerm, $searchDate, $resultsPerPage, $offset);
 ?>
 
 
@@ -297,44 +331,49 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         <div id="main-content">
             <h1>Booking Management</h1>
             <!-- Booking Form -->
-            <div class="AddEdit">
-                <form method="post" action="booking.php">
-                    <input type="hidden" name="action" id="action" value="add">
-                    <input type="hidden" name="booking_id" id="booking_id">
-                    <input type="hidden" name="bus_id" id="bus_id">
+            <div class="AddEditBooking">
+                <form method="post" action="booking.php" class="booking-form-container">
+                    <div class="booking-details">
+                        <input type="hidden" name="action" id="action" value="add">
+                        <input type="hidden" name="booking_id" id="booking_id">
+                        <input type="hidden" name="bus_id" id="bus_id">
 
-                    <label for="customer_id">Customer ID:</label>
-                    <input type="number" name="customer_id" id="customer_id" required><br>
+                        <label for="customer_id">Customer ID:</label>
+                        <input type="number" name="customer_id" id="customer_id" required><br>
 
-                    <label for="full_name">Full Name:</label>
-                    <input type="text" id="full_name" readonly><br>
+                        <label for="full_name">Full Name:</label>
+                        <input type="text" id="full_name" readonly><br>
 
-                    <label for="contact_no">Contact No:</label>
-                    <input type="text" id="contact_no" readonly><br>
+                        <label for="contact_no">Contact No:</label>
+                        <input type="text" id="contact_no" readonly><br>
 
-                    <label for="route_id">Route:</label>
-                    <select name="route_id" id="route_id" required>
-                        <option value="">Select a route</option>
-                        <?php foreach ($routes as $route): ?>
-                            <option value="<?= $route['route_id'] ?>" 
-                                    data-cost="<?= $route['cost'] ?>" 
-                                    data-seats="<?= $route['bus_seat'] ?>" 
-                                    data-bus-id="<?= $route['bus_id'] ?>" 
-                                    data-departure-time="<?= $route['departure_time'] ?>">
-                                <?= $route['route_name'] ?> - <?= $route['bus_no'] ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select><br>
+                        <label for="route_id">Route:</label>
+                        <select name="route_id" id="route_id" required>
+                            <option value="">Select a route</option>
+                            <?php foreach ($routes as $route): ?>
+                                <option value="<?= $route['route_id'] ?>" 
+                                        data-cost="<?= $route['cost'] ?>" 
+                                        data-seats="<?= $route['bus_seat'] ?>" 
+                                        data-bus-id="<?= $route['bus_id'] ?>" 
+                                        data-departure-time="<?= $route['departure_time'] ?>">
+                                    <?= $route['route_name'] ?> - <?= $route['bus_no'] ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select><br>
 
-                    <label for="date_book">Booking Date:</label>
-                    <input type="date" name="date_book" id="date_book" required><br>
+                        <label for="date_book">Booking Date:</label>
+                        <input type="date" name="date_book" id="date_book" required><br>
 
-                    <section class="seat">
-                        <label>Select Seat:</label>
-                        <div id="seat_grid"></div>
-                    </section>
+                        <div class="seat-selection">
+                            <section class="seat">
+                                <label>Select Seat:</label>
+                                <div id="seat_grid"></div>
+                                <input type="hidden" name="seat_taken" id="seat_taken">
+                            </section>
+                        </div>
 
-                    <input type="submit" value="Submit Booking">
+                        <input type="submit" value="Submit Booking">
+                    </div>
                 </form>
             </div>
 
@@ -342,11 +381,12 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
 <!-- Add the search and refresh controls -->
 <div class="table-controls">
                 <form class="form-controls" method="GET" action="booking.php">
+                <input type="date" name="date" value="<?php echo htmlspecialchars($searchDate); ?>">
                     <a href="booking.php" class="refresh-Btn">
-                        Refresh
+                        <i class="fas fa-sync-alt"></i>
                     </a>
                     <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
-                    <button type="submit" class="search-Btn">Search</button>
+                    <button type="submit" class="search-Btn"><i class="fas fa-search"></i></button>
                 </form>
             </div>
 <table border="1">
@@ -370,8 +410,12 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
             <td><?= $booking['seat_taken'] ?></td>
             <td><?= $booking['date_book'] ?></td>
             <td>
-                <button class="editBtn" onclick='editBooking(<?= json_encode($booking) ?>)'>Edit</button>
-                <button class="deleteBtn" onclick="deleteBooking(<?= $booking['booking_id'] ?>)">Delete</button>
+                <button class="editBtn" style="color:#ffffff; border: none;" onclick='editBooking(<?= json_encode($booking) ?>)'><i class="fas fa-edit"></i></button>
+                <form method="post" action="booking.php" style="display:inline; background-color: transparent; box-shadow: none; padding: 0; margin: 0;">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="booking_id" value="<?= $booking['booking_id'] ?>">
+                    <button type="submit" class="deleteBtn" style="color:#ffffff; border: none;" onclick="return confirm('Are you sure you want to delete this booking?')"><i class="fas fa-trash-alt"></i></button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>
@@ -381,18 +425,18 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
             <!-- Add pagination -->
             <div class="pagination">
                 <?php if ($page > 1): ?>
-                    <a href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($searchTerm); ?>">Previous</a>
+                    <a href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($searchTerm); ?>&date=<?php echo urlencode($searchDate); ?>">Previous</a>
                 <?php endif; ?>
 
                 <?php
                 for ($i = 1; $i <= $totalPages; $i++) {
                     $activeClass = ($i == $page) ? 'active' : '';
-                    echo "<a href='?page=$i&search=" . urlencode($searchTerm) . "' class='$activeClass'>$i</a>";
+                    echo "<a href='?page=$i&search=" . urlencode($searchTerm) . "&date=" . urlencode($searchDate) . "' class='$activeClass'>$i</a>";
                 }
                 ?>
 
                 <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($searchTerm); ?>">Next</a>
+                    <a href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($searchTerm); ?>&date=<?php echo urlencode($searchDate); ?>">Next</a>
                 <?php endif; ?>
             </div>
 
@@ -406,6 +450,7 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         const dateBookInput = document.getElementById('date_book');
         const seatGrid = document.getElementById('seat_grid');
         const busIdInput = document.getElementById('bus_id');
+        const seatTakenInput = document.getElementById('seat_taken');
 
         // Fetch customer details when customer ID changes
         customerIdInput.addEventListener('change', function() {
@@ -440,7 +485,7 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
                         for (let i = 1; i <= totalSeats; i++) {
                             const input = document.createElement('input');
                             input.type = 'radio';
-                            input.name = 'seat_taken';
+                            input.name = 'seat_radio';
                             input.value = i;
                             input.id = `seat_${i}`;
                             
@@ -455,16 +500,15 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
                             }
 
                             // Add click event to handle seat selection
-                            label.addEventListener('click', function() {
-                                if (!input.disabled) {
+                            input.addEventListener('change', function() {
+                                if (this.checked) {
+                                    seatTakenInput.value = this.value;
                                     // Remove previous selections
                                     seatGrid.querySelectorAll('label').forEach(l => {
                                         l.classList.remove('selected');
                                     });
-                                    
                                     // Mark current seat as selected
                                     label.classList.add('selected');
-                                    input.checked = true;
                                 }
                             });
 
@@ -481,6 +525,7 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         tomorrow.setDate(tomorrow.getDate() + 1);
         dateBookInput.min = tomorrow.toISOString().split('T')[0];
     });
+
     function editBooking(booking) {
         document.getElementById('action').value = 'edit';
         document.getElementById('booking_id').value = booking.booking_id;
@@ -490,15 +535,15 @@ $existingBookings = $bookingSystem->getExistingBookings($searchTerm, $resultsPer
         document.getElementById('route_id').value = booking.route_id;
         document.getElementById('date_book').value = booking.date_book;
         document.getElementById('bus_id').value = booking.bus_id;
-        updateSeatGrid();
-    }
+        document.getElementById('seat_taken').value = booking.seat_taken;
 
-    function deleteBooking(booking_id) {
-        if (confirm('Are you sure you want to delete this booking?')) {
-            document.getElementById('action').value = 'delete';
-            document.getElementById('booking_id').value = booking_id;
-            document.forms[0].submit();
-        }
+        // Trigger the seat grid update
+        const routeSelect = document.getElementById('route_id');
+        const event = new Event('change');
+        routeSelect.dispatchEvent(event);
+
+        // Scroll to the form
+        document.querySelector('.AddEditBooking').scrollIntoView({behavior: 'smooth'});
     }
     </script>
 </body>

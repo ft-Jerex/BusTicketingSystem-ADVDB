@@ -236,10 +236,10 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="table-controls">
                 <form class="form-controls" method="GET" action="customer.php">
                     <a href="customer.php" class="refresh-Btn">
-                        Refresh
+                        <i class="fas fa-sync-alt"></i>
                     </a>
                     <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
-                    <button type="submit" class="search-Btn">Search</button>
+                    <button type="submit" class="search-Btn"><i class="fas fa-search"></i></button>
                 </form>
             </div>
 
@@ -260,8 +260,8 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?php echo htmlspecialchars($row['contact_no']); ?></td>
                     <td><?php echo htmlspecialchars($row['email']); ?></td>
                     <td>
-                        <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['customer_id']); ?>">Edit</a>
-                        <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['customer_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                        <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['customer_id']); ?>"><i class="fas fa-edit"></i></a>
+                        <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['customer_id']); ?>" onclick="return confirm('Are you sure?');"><i class="fas fa-trash-alt"></i></a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

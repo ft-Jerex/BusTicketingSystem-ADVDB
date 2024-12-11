@@ -72,6 +72,12 @@ class BookingSystem extends Database
 
     public function addBooking($customer_id, $bus_id, $route_id, $seat_taken, $date_book)
     {
+        // Check if booking date is not today or in the past
+        $today = date('Y-m-d');
+        if ($date_book <= $today) {
+            return false;
+        }
+
         $sql = "INSERT INTO booking (fk_customer_id, fk_bus_id, fk_route_id, seat_taken, date_book)
                 VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
@@ -94,6 +100,20 @@ function bookingAlert(){
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $bookingSystem = new BookingSystem();
     $customer_id = $_SESSION['customer_id'] ?? null;
+    
+    // Validate booking date
+    $booking_date = $_POST['date_book'];
+    $today = date('Y-m-d');
+    if ($booking_date <= $today) {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('errorModal').style.display = 'block';
+                document.getElementById('modalMessage').innerText = 'Cannot book for today or past dates. Please select a future date.';
+            });
+        </script>";
+        return;
+    }
+    
     $result = $bookingSystem->addBooking(
         $customer_id,
         $_POST['bus_id'],
@@ -101,9 +121,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_POST['seat_taken'],
         $_POST['date_book']
     );
-    echo $result ? "Booking added successfully." : "Failed to add booking.";
-     }
+    if ($result) {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('successModal').style.display = 'block';
+            });
+        </script>";
+    } else {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('errorModal').style.display = 'block';
+                document.getElementById('modalMessage').innerText = 'Failed to add booking.';
+            });
+        </script>";
     }
+  }
+}
 ?>
 
 <!DOCTYPE html>
@@ -115,9 +148,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="userStyle1.css">
 </head>
 <body>
+<!-- Success Modal -->
+<div id="successModal" class="modal success-modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('successModal')">&times;</span>
+        <h2>Success!</h2>
+        <p>Booking added successfully.</p>
+        <button class="modal-button" onclick="closeModal('successModal')">OK</button>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="errorModal" class="modal error-modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('errorModal')">&times;</span>
+        <h2>Error</h2>
+        <p id="modalMessage"></p>
+        <button class="modal-button" onclick="closeModal('errorModal')">OK</button>
+    </div>
+</div>
+
 <div class="container-header">
     <header>
-        <a href="./index.php" class="logo"><img src="./img/arrow-left-solid.svg" alt=""></a>
+        <a href="./index.php" class="logo"><img src="./img/arrow-left-solid.svg" alt="" style="filter: invert(1);"></a>
 
         <?php if ($isLoggedIn): ?>
             <div class="dropdown">
@@ -135,8 +188,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </header>
 </div>
 
-<main class="main">
-    <div id="main-content">
+<main class="main" style="display:flex; justify-content:center;">
+    <div id="main-content" style="width: 540px;">
         <h1 class="booking-title">Add a Booking</h1>
         <?php echo bookingAlert();?>
         <div class="AddEdit">
@@ -166,7 +219,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <label for="date_book">Booking Date:</label>
-                <input type="date" name="date_book" id="date_book" required><br>
+                <input type="date" name="date_book" id="date_book" required min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" 
+                       onchange="validateDate(this)"><br>
 
                 <label>Select Seat:</label>
                 <section class="seat-section">
@@ -179,6 +233,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 </main>
 <script>
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    if(modalId === 'successModal') {
+        window.location.href = 'transaction.php'; // Redirect to transaction page after successful booking
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const routeSelect = document.getElementById('route_id');
     const dateBookInput = document.getElementById('date_book');
@@ -189,8 +250,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const routeSeats = document.getElementById('route-seats');
     const routeDepartureTime = document.getElementById('route-departure-time');
 
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateBookInput.min = tomorrow.toISOString().split('T')[0];
+
+    // Function to validate date
+    function validateDate(input) {
+        const selectedDate = new Date(input.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate <= today) {
+            document.getElementById('errorModal').style.display = 'block';
+            document.getElementById('modalMessage').innerText = 'Please select a future date for booking.';
+            input.value = '';
+            return false;
+        }
+        return true;
+    }
+
     routeSelect.addEventListener('change', updateSeatGrid);
-    dateBookInput.addEventListener('change', updateSeatGrid);
+    dateBookInput.addEventListener('change', function() {
+        if (validateDate(this)) {
+            updateSeatGrid();
+        }
+    });
 
     function updateSeatGrid() {
     const routeId = routeSelect.value;
@@ -255,12 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 }
-
-    // Set minimum date for booking
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    dateBookInput.min = tomorrow.toISOString().split('T')[0];
 });
 </script>
 </body>

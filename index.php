@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'Database.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['customer']);
@@ -79,7 +80,7 @@ function getFullName() {
 </div>
 
 <!-- <main class="container"> -->
-    <hr class="featurette-divider" />
+    <!-- <hr class="featurette-divider" /> -->
 
     <div class="featurette">
         <div class="featurette-text">
@@ -87,6 +88,39 @@ function getFullName() {
             <p>The Zamboanga Integrated Bus Terminal connects passengers to key provinces in the Zamboanga Peninsula or beyond, making it a convenient transit point for regional travel.</p>
         </div>
         <div class="featurette-image1"></div>
+    </div>
+
+    <!-- <hr class="featurette-divider" /> -->
+    
+    <div class="available-routes">
+        <h2 class="section-title">Available Routes</h2>
+        <div class="routes-container">
+            <?php
+            $db = new Database();
+            $conn = $db->connect();
+            
+            $sql = "SELECT r.route_name, b.bus_no, b.bus_type, r.departure_time, r.cost 
+                    FROM route r
+                    JOIN bus b ON r.fk_bus_id = b.bus_id
+                    ORDER BY r.departure_time ASC";
+                    
+            $stmt = $conn->query($sql);
+            $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            foreach($routes as $route): ?>
+                <div class="route-card">
+                    <div class="route-header">
+                        <h3><?php echo htmlspecialchars($route['route_name']); ?></h3>
+                        <span class="bus-badge"><?php echo htmlspecialchars($route['bus_type']); ?></span>
+                    </div>
+                    <div class="route-details">
+                        <p><i class="fas fa-bus"></i> Bus No: <?php echo htmlspecialchars($route['bus_no']); ?></p>
+                        <p><i class="far fa-clock"></i> Departure: <?php echo date('h:i A', strtotime($route['departure_time'])); ?></p>
+                        <p><i class="fas fa-tag"></i> Price: ₱<?php echo number_format($route['cost'], 2); ?></p>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
 
     <hr class="featurette-divider" />
@@ -100,8 +134,8 @@ function getFullName() {
     </div>
 
     <!-- <hr class="featurette-divider" id="aboutDivider"/> -->
-
-    <h2 class="about">About</h2>
+    <div class="About_Section" style="background-color: #283950; padding: 40px 0;">
+    <h2 class="about" style="display: flex; justify-content:center; color:#ffff">About</h2>
     <div class="about-section">
         <div class="about-item">
             <h3>Inaugration</h3>
@@ -116,6 +150,44 @@ function getFullName() {
             <p>The Zamboanga Integrated Bus Terminal is equipped with security measures such as CCTV cameras and security personnel to ensure the safety of passengers and staff.</p>
         </div>
     </div>
+    </div>
+
+<div class="contact-section" style="background-color: #f5f5f5; padding: 40px 0;">
+    <div class="contact-container" style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 40px;">
+        <div class="contact-map" style="flex: 1;">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.7046244492387!2d122.07377147486453!3d7.0444999927633825!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32502e821b833da7%3A0x62d2c46c6c6a8c08!2sZamboanga%20City%20Integrated%20Bus%20Terminal!5e0!3m2!1sen!2sph!4v1708697789609!5m2!1sen!2sph"
+                width="100%" 
+                height="450" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+        
+        <div class="contact-info" style="flex: 1; padding: 20px;">
+            <h2 style="color: #283950; margin-bottom: 30px; font-size: 2.5em;">Contact Us</h2>
+            
+            <div class="contact-details" style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="contact-item" style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-envelope" style="width: 20px; height: 20px; color: #283950;"></i>
+                    <p>Email: info@zamboint.com</p>
+                </div>
+                
+                <div class="contact-item" style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-phone" style="width: 20px; height: 20px; color: #283950;"></i>
+                    <p>Contact: (062) 991-2121</p>
+                </div>
+                
+                <div class="contact-item" style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-location-dot" style="width: 20px; height: 20px; color: #283950;"></i>
+                    <p>Divisoria, Zamboanga City, Philippines</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </main>
 
 <footer class="footer">

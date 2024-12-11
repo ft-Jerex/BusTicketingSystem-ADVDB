@@ -27,6 +27,7 @@ $offset = ($page - 1) * $resultsPerPage;
 
 // Search functionality
 $searchTerm = isset($_GET['search']) ? clean_input($_GET['search']) : '';
+$busTypeFilter = isset($_GET['bus_type']) ? clean_input($_GET['bus_type']) : '';
 
 // Handle Create
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add') {
@@ -99,16 +100,27 @@ if (isset($_GET['delete'])) {
 }
 
 // Prepare search and pagination query
-$searchCondition = $searchTerm ? "WHERE bus_no LIKE ? OR bus_type LIKE ?" : "";
-$countSql = "SELECT COUNT(*) FROM bus $searchCondition";
-$sql = "SELECT * FROM bus $searchCondition LIMIT ? OFFSET ?";
+$searchCondition = [];
+$params = [];
+
+if ($searchTerm) {
+    $searchCondition[] = "(bus_no LIKE ? OR bus_type LIKE ?)";
+    $params[] = "%$searchTerm%";
+    $params[] = "%$searchTerm%";
+}
+
+if ($busTypeFilter) {
+    $searchCondition[] = "bus_type = ?";
+    $params[] = $busTypeFilter;
+}
+
+$whereClause = !empty($searchCondition) ? "WHERE " . implode(" AND ", $searchCondition) : "";
+
+$countSql = "SELECT COUNT(*) FROM bus $whereClause";
+$sql = "SELECT * FROM bus $whereClause LIMIT ? OFFSET ?";
 
 $stmt = $conn->prepare($countSql);
-if ($searchTerm) {
-    $stmt->execute(["%$searchTerm%", "%$searchTerm%"]);
-} else {
-    $stmt->execute();
-}
+$stmt->execute($params);
 $totalResults = $stmt->fetchColumn();
 $totalPages = ceil($totalResults / $resultsPerPage);
 
@@ -117,17 +129,12 @@ $page = max(1, min($page, $totalPages));
 $offset = ($page - 1) * $resultsPerPage;
 
 $stmt = $conn->prepare($sql);
-if ($searchTerm) {
-    $stmt->bindValue(1, "%$searchTerm%", PDO::PARAM_STR);
-    $stmt->bindValue(2, "%$searchTerm%", PDO::PARAM_STR);
-    $stmt->bindValue(3, $resultsPerPage, PDO::PARAM_INT);
-    $stmt->bindValue(4, $offset, PDO::PARAM_INT);
-    $stmt->execute();
-} else {
-    $stmt->bindValue(1, $resultsPerPage, PDO::PARAM_INT);
-    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
-    $stmt->execute();
+foreach ($params as $key => $value) {
+    $stmt->bindValue($key + 1, $value);
 }
+$stmt->bindValue(count($params) + 1, $resultsPerPage, PDO::PARAM_INT);
+$stmt->bindValue(count($params) + 2, $offset, PDO::PARAM_INT);
+$stmt->execute();
 $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -224,14 +231,21 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <h2>View Buses</h2>
         <div class="table-controls">
-    <form class="form-controls" method="GET" action="bus.php">
-        <a href="bus.php" class="refresh-Btn">
-                Refresh
-            </a>
-        <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
-        <button type="submit" class="search-Btn">Search</button>
-    </form>
-</div>
+            <form class="form-controls" method="GET" action="bus.php">
+                <a href="bus.php" class="refresh-Btn">
+                    <i class="fas fa-sync-alt"></i>
+                </a>
+                <select name="bus_type" style="width: 140px;">
+                    <option value="">All Bus Types</option>
+                    <option value="aircon" <?php echo $busTypeFilter === 'aircon' ? 'selected' : ''; ?>>Aircon</option>
+                    <option value="non-aircon" <?php echo $busTypeFilter === 'non-aircon' ? 'selected' : ''; ?>>Non-Aircon</option>
+                </select>
+                <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
+                <button type="submit" class="search-Btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
 
         <table border="1">
             <tr>
@@ -248,8 +262,8 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td><?php echo htmlspecialchars($row['bus_type']); ?></td>
                 <td><?php echo htmlspecialchars($row['bus_seat']); ?></td>
                 <td>
-                    <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>">Edit</a>
-                    <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                    <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['bus_id']); ?>"><i class="fas fa-edit"></i></a>
+                    <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['bus_id']); ?>" onclick="return confirm('Are you sure?');"><i class="fas fa-trash-alt"></i></a>
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -258,19 +272,19 @@ $buses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Pagination -->
         <div class="pagination">
             <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($searchTerm); ?>">Previous</a>
+                <a href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($searchTerm); ?>&bus_type=<?php echo urlencode($busTypeFilter); ?>">Previous</a>
             <?php endif; ?>
 
             <?php
             // Show page numbers
             for ($i = 1; $i <= $totalPages; $i++) {
                 $activeClass = ($i == $page) ? 'active' : '';
-                echo "<a href='?page=$i&search=" . urlencode($searchTerm) . "' class='$activeClass'>$i</a>";
+                echo "<a href='?page=$i&search=" . urlencode($searchTerm) . "&bus_type=" . urlencode($busTypeFilter) . "' class='$activeClass'>$i</a>";
             }
             ?>
 
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($searchTerm); ?>">Next</a>
+                <a href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($searchTerm); ?>&bus_type=<?php echo urlencode($busTypeFilter); ?>">Next</a>
             <?php endif; ?>
         </div>
     </div>

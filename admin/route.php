@@ -133,49 +133,6 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Route Management</title>
     <?php include_once 'includes/header.php'; ?>
-    <style>
-        .table-controls {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .pagination a {
-            margin: 0 5px;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: black;
-        }
-        .pagination a.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .form-controls {
-            background-color: transparent;
-            box-shadow: none;
-            padding: 0px;
-        }
-        .form-controls input{
-            width: 300px;
-        }
-        .form-controls .search-Btn, .form-controls .refresh-Btn {
-            height: 40px;   
-            padding: 10px;
-            font-size: 16px;
-            color: #000000;
-            background-color: #D3D3D3;
-            border:none;
-            border-radius: 5px;
-        }
-    </style>
 </head>
 <body>
 <header class="header">
@@ -260,10 +217,10 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="table-controls">
             <form class="form-controls" method="GET" action="route.php">
                 <a href="route.php" class="refresh-Btn">
-                    Refresh
+                    <i class="fas fa-sync-alt"></i>
                 </a>
                 <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($searchTerm); ?>">
-                <button type="submit" class="search-Btn">Search</button>
+                <button type="submit" class="search-Btn"><i class="fas fa-search"></i></button>
             </form>
         </div>
 
@@ -284,8 +241,8 @@ $routes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td><?php echo htmlspecialchars($row['departure_time']); ?></td>
                 <td><?php echo htmlspecialchars($row['cost']); ?></td>
                 <td>
-                    <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['route_id']); ?>">Edit</a>
-                    <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['route_id']); ?>" onclick="return confirm('Are you sure?');">Delete</a>
+                    <a class="editBtn" href="?edit=<?php echo htmlspecialchars($row['route_id']); ?>"><i class="fas fa-edit"></i></a>
+                    <a class="deleteBtn" href="?delete=<?php echo htmlspecialchars($row['route_id']); ?>" onclick="return confirm('Are you sure?');"><i class="fas fa-trash-alt"></i></a>
                 </td>
             </tr>
             <?php endforeach; ?>
