@@ -14,8 +14,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $confirm_password = $_POST['confirm_password'] ?? '';
     $is_admin = isset($_POST['isAdmin']) ? true : false;
 
-    if (empty($first_name) || empty($last_name) || empty($contact_no) || empty($email) || empty($password) || empty($confirm_password)) {
+    // Enhanced email validation
+    function isValidEmail($email) {
+        // Check if email is properly formatted
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        // Optional: Check for disposable email domains (you can expand this list)
+        $disposableDomains = [
+            'mailinator.com', 'temp-mail.org', 'guerrillamail.com', 
+            'throwawaymail.com', 'sharklasers.com'
+        ];
+        $emailDomain = strtolower(substr(strrchr($email, "@"), 1));
+        if (in_array($emailDomain, $disposableDomains)) {
+            return false;
+        }
+
+        // Optional: DNS MX record check to verify email domain exists
+        return checkdnsrr($emailDomain, 'MX');
+    }
+
+    // Validation checks
+    if (empty($first_name) || empty($last_name) || empty($contact_no) || 
+        empty($email) || empty($password) || empty($confirm_password)) {
         $message = "All fields are required.";
+    } elseif (!isValidEmail($email)) {
+        $message = "Invalid email address. Please provide a valid email.";
     } elseif ($password !== $confirm_password) {
         $message = "Passwords do not match.";
     } elseif ($customer->emailExist($email)) {
@@ -52,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <form method="post" action="">
-    <h2>Customer Registration</h2>
+        <h2>Customer Registration</h2>
         <input type="text" name="first_name" placeholder="First Name" required>
         <input type="text" name="last_name" placeholder="Last Name" required>
         <input type="tel" name="contact_no" placeholder="Contact Number" required>
@@ -62,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="submit" value="Register as Customer">
         <a class="return-btn" href="./login.php">Return Login</a>
     </form>
-        
 
     <?php if (!empty($message)): ?>
         <div class="message"><?php echo $message; ?></div>
